@@ -212,3 +212,13 @@ Chronological record of technical decisions, architecture transitions, code chan
   - Authored comprehensive root [`README.md`](file:///d:/New_land_registry/README.md) featuring architecture diagrams, system invariants, quickstart commands, and roadmap status.
   - Successfully committed 78 files and pushed to `origin/main` (`commit 7c34e28`).
 - **Working Tree Status:** Clean, synchronized with `origin/main`.
+
+---
+
+### [2026-10-02 22:40:00 +05:30] — Repository Hygiene: Untracked IDE & Agent Files
+- **Context:** Management directive to remove IDE-specific directories (`.agents/`), editor configs, and local log files from the remote repository so that only genuine project technical code and specifications are public.
+- **Actions:**
+  - Untracked `.agents/` from Git cache (`git rm -r --cached .agents`) while preserving files locally.
+  - Updated `.gitignore` to explicitly ignore `.agents/`, `.gemini/`, `.system_generated/`, `.cursor/`, `.claude/`, `*.log`, and `logs/`.
+  - Committed and pushed changes to `origin/main` (`commit 052ed34`).
+- **Repository State:** Verified via `git ls-files` that only project code (`backend/`, `contracts/`, `indexer/`, `deployments/`, `docs/`, `infra/`, `scripts/`) is tracked on GitHub.
