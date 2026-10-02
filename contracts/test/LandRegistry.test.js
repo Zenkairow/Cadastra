@@ -249,4 +249,40 @@ describe("LandRegistry Contract", function () {
       expect(await landRegistry.isCallerLandOwner(1, citizenAlice.address)).to.be.false;
     });
   });
+
+  describe("Shared Parcel Key Test Vectors (Cross-Layer Determinism)", function () {
+    const fs = require("fs");
+    const path = require("path");
+
+    it("should compute exact keccak256 parcel keys matching off-chain test vectors", async function () {
+      const vectorPath = path.join(__dirname, "..", "..", "deployments", "test_vectors", "parcel_keys.json");
+      const vectors = JSON.parse(fs.readFileSync(vectorPath, "utf8"));
+
+      for (const vec of vectors) {
+        const onChainKey = ethers.keccak256(ethers.toUtf8Bytes(vec.expected_canonical_identifier));
+        expect(onChainKey).to.equal(vec.expected_parcel_key, `Mismatch in parcel key for: ${vec.description}`);
+      }
+    });
+
+    it("should reject duplicate registration for normalized variants resolving to the same key", async function () {
+      const vectorPath = path.join(__dirname, "..", "..", "deployments", "test_vectors", "parcel_keys.json");
+      const vectors = JSON.parse(fs.readFileSync(vectorPath, "utf8"));
+
+      const v1 = vectors[0]; // Baseline
+      const v2 = vectors[1]; // Whitespace/lowercase variant (same key)
+
+      // Register baseline parcelKey
+      await landRegistry
+        .connect(fieldInspectorPune)
+        .registerLand(v1.expected_parcel_key, aliceIdentityId, JURISDICTION_PUNE, geometryHash1, manifestHash1);
+
+      // Attempting to register v2 with same parcelKey MUST revert on-chain
+      await expect(
+        landRegistry
+          .connect(fieldInspectorPune)
+          .registerLand(v2.expected_parcel_key, bobIdentityId, JURISDICTION_PUNE, geometryHash1, manifestHash1)
+      ).to.be.revertedWithCustomError(landRegistry, "DuplicateParcelKey");
+    });
+  });
 });
+

@@ -100,3 +100,30 @@ async def test_duplicate_application_parcel_key_rejected(client, test_wallet):
     res2 = await client.post("/api/v1/applications/draft", json=payload, headers=headers)
     assert res2.status_code == 409
     assert "already exists" in res2.json()["detail"]
+
+def test_shared_parcel_key_vectors():
+    """
+    Verifies that ApplicationService satisfies the shared parcel key test vectors
+    from deployments/test_vectors/parcel_keys.json exactly.
+    """
+    import json
+    import os
+    from backend.app.services.application_service import application_service
+
+    vector_path = os.path.join("deployments", "test_vectors", "parcel_keys.json")
+    with open(vector_path, "r", encoding="utf-8") as f:
+        vectors = json.load(f)
+
+    for vec in vectors:
+        raw = vec["input"]
+        canonical_id, parcel_key = application_service.build_canonical_parcel_data(
+            state=raw["state"],
+            district=raw["district"],
+            taluka=raw["taluka"],
+            village=raw["village"],
+            survey_number=raw["survey_number"],
+            subdivision=raw["subdivision"]
+        )
+        assert canonical_id == vec["expected_canonical_identifier"], f"Failed canonical string for: {vec['description']}"
+        assert parcel_key == vec["expected_parcel_key"], f"Failed parcel_key for: {vec['description']}"
+

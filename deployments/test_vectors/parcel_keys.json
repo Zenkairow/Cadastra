@@ -1,0 +1,106 @@
+[
+  {
+    "description": "Standard baseline parcel in Pune",
+    "input": {
+      "state": "Maharashtra",
+      "district": "Pune",
+      "taluka": "Haveli",
+      "village": "Kharadi",
+      "survey_number": "123",
+      "subdivision": "1"
+    },
+    "expected_canonical_identifier": "MAHARASHTRA|PUNE|HAVELI|KHARADI|123|1",
+    "expected_parcel_key": "0x8d4d49d665d93da8693cd1af48d2b4f91634eb75a7d3ce03a97e8e44db9e3d07"
+  },
+  {
+    "description": "Whitespace and lowercase normalization check (must match identical canonical as baseline)",
+    "input": {
+      "state": "  maharashtra  ",
+      "district": "pune ",
+      "taluka": "haveli",
+      "village": " kharadi",
+      "survey_number": " 123 ",
+      "subdivision": "1 "
+    },
+    "expected_canonical_identifier": "MAHARASHTRA|PUNE|HAVELI|KHARADI|123|1",
+    "expected_parcel_key": "0x8d4d49d665d93da8693cd1af48d2b4f91634eb75a7d3ce03a97e8e44db9e3d07"
+  },
+  {
+    "description": "Subdivision default check (empty subdivision normalized to 0)",
+    "input": {
+      "state": "Maharashtra",
+      "district": "Pune",
+      "taluka": "Haveli",
+      "village": "Kharadi",
+      "survey_number": "123",
+      "subdivision": ""
+    },
+    "expected_canonical_identifier": "MAHARASHTRA|PUNE|HAVELI|KHARADI|123|0",
+    "expected_parcel_key": "0xdf0ba9eb8043277b34a4f5aba13ebaf7f74df0e2e3150b0405026aee2954c007"
+  },
+  {
+    "description": "Single character difference: survey number 123 vs 124 (must generate DIFFERENT parcelKey)",
+    "input": {
+      "state": "Maharashtra",
+      "district": "Pune",
+      "taluka": "Haveli",
+      "village": "Kharadi",
+      "survey_number": "124",
+      "subdivision": "1"
+    },
+    "expected_canonical_identifier": "MAHARASHTRA|PUNE|HAVELI|KHARADI|124|1",
+    "expected_parcel_key": "0x4876272a7af3862b2e5d6a4aadd412820b1c49f450bf1bcb78c2c5d49dc3dfe4"
+  },
+  {
+    "description": "Single character difference: subdivision 1 vs 2 (must generate DIFFERENT parcelKey)",
+    "input": {
+      "state": "Maharashtra",
+      "district": "Pune",
+      "taluka": "Haveli",
+      "village": "Kharadi",
+      "survey_number": "123",
+      "subdivision": "2"
+    },
+    "expected_canonical_identifier": "MAHARASHTRA|PUNE|HAVELI|KHARADI|123|2",
+    "expected_parcel_key": "0xc676e2a4e7738f4d4874e60775881b6c7488b068d3c61371f80c8944feb68e68"
+  },
+  {
+    "description": "Unicode NFKC normalization with special spaces and accents",
+    "input": {
+      "state": "Maharashtra\u00a0",
+      "district": "Pune",
+      "taluka": "Haveli",
+      "village": "Kharadi",
+      "survey_number": "123",
+      "subdivision": "1"
+    },
+    "expected_canonical_identifier": "MAHARASHTRA|PUNE|HAVELI|KHARADI|123|1",
+    "expected_parcel_key": "0x8d4d49d665d93da8693cd1af48d2b4f91634eb75a7d3ce03a97e8e44db9e3d07"
+  },
+  {
+    "description": "Different village in same taluka",
+    "input": {
+      "state": "Maharashtra",
+      "district": "Pune",
+      "taluka": "Haveli",
+      "village": "Wagholi",
+      "survey_number": "123",
+      "subdivision": "1"
+    },
+    "expected_canonical_identifier": "MAHARASHTRA|PUNE|HAVELI|WAGHOLI|123|1",
+    "expected_parcel_key": "0x12e9b59b8a9983efd223c9868c36e3c4c40c8f98361f150932350c133dbf5b14"
+  },
+  {
+    "description": "Different district in same state",
+    "input": {
+      "state": "Maharashtra",
+      "district": "Nashik",
+      "taluka": "Haveli",
+      "village": "Kharadi",
+      "survey_number": "123",
+      "subdivision": "1"
+    },
+    "expected_canonical_identifier": "MAHARASHTRA|NASHIK|HAVELI|KHARADI|123|1",
+    "expected_parcel_key": "0x6e3fb301b8ce3b0b50bd36cd52e5347134af3561cd512989a5764b5e5db04b69"
+  }
+]

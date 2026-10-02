@@ -81,7 +81,7 @@ Cadastra partitions responsibilities across four distinct layers to achieve cryp
 
 The project includes an empirical, multi-layer automated test suite:
 
-### 1. Smart Contract Tests (47 Passing Tests)
+### 1. Smart Contract Tests (49 Passing Tests)
 ```bash
 cd contracts
 npm test
@@ -89,9 +89,10 @@ npm test
 - Identity binding, duplicate wallet/identity rejection, and recovery transitions.
 - Inspector jurisdiction containment and hierarchical appointment restrictions.
 - Parcel duplicate collision rejection (Layer 1 duplicate defense).
+- Cross-layer shared parcel key test vectors verifying off-chain normalization against on-chain hashing.
 - Financial custody test cases TC01–TC10 (exact payments, pull disbursements, cancellation refunds, high-value governance, balance invariant).
 
-### 2. Backend, Storage, Geospatial & Indexer Tests (30 Passing Tests)
+### 2. Backend, Storage, Geospatial & Indexer Tests (31 Passing Tests)
 ```bash
 python -m pytest backend/tests/ indexer/tests/ -v
 ```

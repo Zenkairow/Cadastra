@@ -1,0 +1,29 @@
+{
+  "dataset_a_parcel_count": 10000,
+  "total_test_cases": 200,
+  "elapsed_seconds": 0.6017,
+  "throughput_cases_per_sec": 332.38,
+  "exact_duplicate_detection_rate_pct": 100.0,
+  "partial_overlap_detection_rate_pct": 100.0,
+  "near_overlap_detection_rate_pct": 100.0,
+  "shared_boundary_false_positive_rate_pct": 0.0,
+  "raw_results": {
+    "EXACT_OVERLAP": {
+      "total": 100,
+      "detected": 100
+    },
+    "PARTIAL_OVERLAP": {
+      "total": 50,
+      "detected": 50
+    },
+    "NEAR_OVERLAP": {
+      "total": 25,
+      "detected": 25
+    },
+    "SHARED_BOUNDARY": {
+      "total": 25,
+      "detected_correctly": 25,
+      "false_positives": 0
+    }
+  }
+}
