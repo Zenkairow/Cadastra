@@ -135,3 +135,54 @@ class DocumentVerificationResponse(BaseModel):
     on_chain_manifest_hash: Optional[str] = None
     on_chain_integrity: Optional[str] = None
 
+# --- Geospatial Schemas ---
+class BoundingBox(BaseModel):
+    min_lon: float
+    min_lat: float
+    max_lon: float
+    max_lat: float
+
+class GeoJSONValidationRequest(BaseModel):
+    geojson: Dict[str, Any]
+
+class GeoJSONValidationResponse(BaseModel):
+    is_valid: bool
+    area_sq_meters: float
+    area_hectares: float
+    area_acres: float
+    canonical_geojson: Dict[str, Any]
+    geometry_hash: str
+    bounding_box: BoundingBox
+
+class OverlapCheckRequest(BaseModel):
+    geojson: Dict[str, Any]
+    exclude_application_id: Optional[str] = None
+    exclude_land_id: Optional[int] = None
+
+class ConflictDetail(BaseModel):
+    parcel_id: Optional[Any] = None
+    parcel_key: Optional[str] = None
+    overlap_type: str # EXACT_OVERLAP, PARTIAL_OVERLAP, NEAR_OVERLAP, SHARED_BOUNDARY, DISJOINT
+    is_overlap: bool
+    severity: str # CRITICAL, WARNING, INFO, CLEAR
+    intersection_area_sqm: float
+    overlap_pct_candidate: float
+    overlap_pct_registered: float
+    distance_meters: float
+    details: str
+
+class OverlapCheckResponse(BaseModel):
+    has_overlap: bool
+    severity: str # CLEAR, WARNING, CRITICAL, INFO
+    candidate_area_sqm: float
+    conflict_count: int
+    conflicts: List[ConflictDetail]
+
+class GeometryIntegrityResponse(BaseModel):
+    parcel_id: Any
+    stored_geometry_hash: str
+    recomputed_geometry_hash: str
+    is_intact: bool
+    status: str # MATCH, DRIFT_DETECTED
+
+

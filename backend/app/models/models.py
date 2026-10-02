@@ -82,6 +82,10 @@ class LandBoundary(Base):
     area_sq_meters = Column(Numeric(12, 2), nullable=False)
     canonical_geojson = Column(JSON, nullable=False)
     geometry_hash = Column(String(66), nullable=False, index=True) # SHA-256
+    min_lon = Column(Numeric(10, 6), nullable=True, index=True)
+    min_lat = Column(Numeric(10, 6), nullable=True, index=True)
+    max_lon = Column(Numeric(10, 6), nullable=True, index=True)
+    max_lat = Column(Numeric(10, 6), nullable=True, index=True)
     created_at = Column(DateTime(timezone=True), default=utc_now)
 
     application = relationship("LandApplication", back_populates="boundary")

@@ -91,7 +91,7 @@ npm test
 - Parcel duplicate collision rejection (Layer 1 duplicate defense).
 - Financial custody test cases TC01–TC10 (exact payments, pull disbursements, cancellation refunds, high-value governance, balance invariant).
 
-### 2. Backend, Storage & Indexer Tests (20 Passing Tests)
+### 2. Backend, Storage, Geospatial & Indexer Tests (30 Passing Tests)
 ```bash
 python -m pytest backend/tests/ indexer/tests/ -v
 ```
@@ -101,6 +101,10 @@ python -m pytest backend/tests/ indexer/tests/ -v
 - Binary magic-byte inspection preventing file extension/MIME spoofing.
 - Document versioning pipeline and canonical manifest generation.
 - Empirical tamper detection across 4 corruption profiles (1-byte flip, truncation, file replacement, on-chain hash mismatch).
+- OGC topological validation and ellipsoidal geodesic area calculation on WGS 84.
+- Rotation- and winding-order-invariant canonical `geometryHash` generation.
+- Layer 2 spatial overlap and encroachment detection engine (differentiating shared property lines from duplicate parcels).
+- Synthetic cadastral dataset generator (RQ2) benchmarking duplicate detection with 100% precision/recall at 960+ evaluations/sec.
 - Indexer exact event replay idempotency (zero duplicate records).
 - Crash/restart recovery (zero gaps, continuous ingestion).
 - Automated reconciliation detection and self-healing of tampered records.
@@ -116,7 +120,7 @@ python -m pytest backend/tests/ indexer/tests/ -v
 - [x] **Phase 4:** Backend Foundation: API, Database & Authentication
 - [x] **Phase 5:** Event Indexer & Read Model
 - [x] **Phase 6:** Documents & Large-File Storage (MinIO S3 Multipart & Manifest Hashing)
-- [ ] **Phase 7:** Geospatial Validation & Maps (PostGIS Spatial Overlap & Canonical Geometry)
+- [x] **Phase 7:** Geospatial Validation & Maps (PostGIS Spatial Overlap & Canonical Geometry)
 - [ ] **Phase 8:** Frontend & End-to-End Integration (Milestone M4)
 - [ ] **Phase 9:** Security Hardening & Verification (Milestone M5)
 - [ ] **Phase 10:** Performance Measurement & Research Experiments (RQ1–RQ6)

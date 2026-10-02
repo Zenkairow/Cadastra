@@ -3,10 +3,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import List, Optional
 
+import json
 from backend.app.database import get_db
 from backend.app.models.models import LandApplication, LandBoundary, Jurisdiction, User
 from backend.app.schemas.schemas import DraftApplicationCreate, ApplicationResponse, InspectorReviewRequest
 from backend.app.services.application_service import application_service
+from backend.app.services.geospatial_service import geospatial_service
 from backend.app.api.dependencies import get_current_user, require_role
 
 router = APIRouter(prefix="/applications", tags=["Land Applications"])
@@ -40,14 +42,29 @@ async def create_draft_application(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"An application already exists for parcel key {parcel_key}"
         )
-
-    # 3. GeoJSON normalization, area calculation, and geometryHash
+    # 3. GeoJSON validation, normalization, area calculation, and geometryHash
     try:
-        norm_geojson, geometry_hash, area_sq_meters = application_service.normalize_geojson_and_hash(req.geojson)
+        norm_geojson, geometry_hash, area_sq_meters, bounding_box = geospatial_service.canonicalize_geojson_and_hash(req.geojson)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-    # 4. Create LandApplication row
+    # 4. Check for spatial overlap against existing registered boundaries / applications
+    stmt_existing = select(LandBoundary)
+    all_boundaries = (await db.execute(stmt_existing)).scalars().all()
+    candidate_list = [
+        {
+            "id": b.id,
+            "on_chain_land_id": b.on_chain_land_id,
+            "canonical_geojson": b.canonical_geojson,
+            "parcel_key": None
+        }
+        for b in all_boundaries
+    ]
+    overlap_report = geospatial_service.evaluate_overlap_against_boundaries(norm_geojson, candidate_list)
+    has_overlap = overlap_report["has_overlap"]
+    overlap_notes = json.dumps(overlap_report["conflicts"]) if overlap_report["conflicts"] else None
+
+    # 5. Create LandApplication row
     app = LandApplication(
         applicant_identity_id=current_user.identity_id,
         jurisdiction_id=req.jurisdiction_id,
@@ -60,17 +77,22 @@ async def create_draft_application(
         canonical_identifier=canonical_id,
         parcel_key=parcel_key,
         status="DRAFT",
-        has_spatial_overlap=False
+        has_spatial_overlap=has_overlap,
+        overlap_notes=overlap_notes
     )
     db.add(app)
     await db.flush()
 
-    # 5. Create LandBoundary row
+    # 6. Create LandBoundary row with bounding box
     boundary = LandBoundary(
         application_id=app.id,
         area_sq_meters=area_sq_meters,
         canonical_geojson=norm_geojson,
-        geometry_hash=geometry_hash
+        geometry_hash=geometry_hash,
+        min_lon=bounding_box["min_lon"],
+        min_lat=bounding_box["min_lat"],
+        max_lon=bounding_box["max_lon"],
+        max_lat=bounding_box["max_lat"]
     )
     db.add(boundary)
     await db.commit()

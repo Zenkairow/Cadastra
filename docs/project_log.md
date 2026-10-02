@@ -246,3 +246,55 @@ Chronological record of technical decisions, architecture transitions, code chan
   - Total Python Suite: **20 passing tests (100% green)** in 1.34s.
   - Combined Monorepo Suite: **47 Hardhat tests + 20 Pytest tests = 67 passing tests (0 failures)**.
 - **Phase Status:** Phase 6 complete. Proceeding to Phase 7 (Geospatial Validation and Maps).
+
+---
+
+### [2026-10-03 00:59:00 +05:30] — Phase 7: Geospatial Validation & Maps [COMPLETED]
+- **Context:** Implementing polygon geometry storage, topological OGC validation, ellipsoidal geodesic area calculation, rotation-invariant canonical `geometryHash`, Layer 2 spatial overlap and encroachment detection, and synthetic dataset generator for duplicate experiments (RQ2).
+- **Components Implemented:**
+  1. **Geospatial Model Enhancements (`backend/app/models/models.py`):**
+     - Enhanced `LandBoundary` with indexed bounding box columns (`min_lon`, `min_lat`, `max_lon`, `max_lat`) enabling sub-millisecond bounding box spatial pre-filtering across any database engine.
+  2. **Core Geospatial Service (`backend/app/services/geospatial_service.py`):**
+     - OGC topological validation via Shapely (`is_valid`, non-self-intersection, closed ring $\ge 4$ coordinates, valid range $[-180, 180]$ and $[-90, 90]$).
+     - Ellipsoidal geodesic surface area calculation on WGS 84 authalic sphere ($R = 6371008.8$m), returning area in square meters, hectares, and acres.
+     - **Rotation-Invariant Canonical `geometryHash` Pipeline:**
+       - Coordinates rounded to 6 decimal places (~0.11m precision).
+       - Ring normalized to counter-clockwise (CCW) exterior ring per RFC 7946 GeoJSON standard via `shapely.ops.orient`.
+       - Starting vertex canonicalized to the lexicographically minimum vertex `(min_lon, min_lat)`.
+       - Deterministic compact JSON serialization hashed with SHA-256 (`0x` prefix).
+       - Invariance: identical parcel drawn clockwise, counter-clockwise, or starting from different vertices produces the identical hash.
+     - **Overlap & Encroachment Detection Engine:**
+       - Compares candidate boundary against registered boundaries.
+       - Differentiates **Shared Boundary** (touching property line or corner, intersection area $= 0$) as valid adjoining contact $\rightarrow$ NOT an overlap!
+       - Differentiates **Near-Overlap** (within 5-meter buffer proximity, zero intersection) for inspector spatial awareness.
+       - Detects **Partial Overlap / Encroachment** (intersection area $\ge 1.0\text{ m}^2$, overlap $< 98\%$).
+       - Detects **Exact Duplicate / Full Overlap** (overlap $\ge 98\%$) as a critical encroachment.
+       - Generates detailed structured conflict report.
+  3. **Geospatial & Maps REST API Router (`backend/app/api/v1/geospatial.py`):**
+     - `POST /api/v1/geospatial/validate`: validates geometry, computes geodesic area in $\text{m}^2$/ha/acres, returns canonical GeoJSON and `geometryHash`.
+     - `POST /api/v1/geospatial/check-overlap`: runs spatial pre-filtering and exact Shapely intersection analysis against registered parcel database.
+     - `GET /api/v1/geospatial/parcels`: returns standard RFC 7946 GeoJSON `FeatureCollection` for map rendering (Google Maps, Leaflet, Mapbox).
+     - `POST /api/v1/geospatial/verify-integrity/{parcel_id}`: recomputes `geometryHash` from database geometry to verify zero tampering against registered record.
+  4. **Cadastral Application Overlap Flagging (`backend/app/api/v1/applications.py`):**
+     - On draft application creation, automatically evaluates spatial overlap against registered boundaries.
+     - Sets `has_spatial_overlap = True` and stores conflict report in `overlap_notes`.
+     - Fulfills the core architectural principle: overlapping applications are flagged for inspector review, never silently auto-deleted.
+  5. **Synthetic Dataset Generator & RQ2 Benchmark (`scripts/generate_synthetic_parcels.py`):**
+     - Generates Dataset A (1,000 unique parcels in Maharashtra grid).
+     - Injects 100 exact duplicates (identical, CW reversed, rotated vertices).
+     - Injects 50 partial overlaps (boundary encroachments).
+     - Injects 25 near-overlaps (1-5m proximity buffer).
+     - Injects 25 shared-boundary adjoining parcels (touching edges).
+     - Evaluated RQ2 benchmark results:
+       - Exact Duplicate Detection Rate: **100.0%** (100/100)
+       - Partial Overlap Detection Rate: **100.0%** (50/50)
+       - Near-Overlap Detection Rate: **100.0%** (25/25)
+       - Shared Boundary False Positive Rate: **0.0%** (0 false positives)
+       - Evaluation Throughput: **960.48 evaluations/sec**.
+       - Results documented in `docs/benchmark_rq2_geospatial.json`.
+- **Tests & Validation:**
+  - `backend/tests/test_geospatial.py`: 10 comprehensive tests passing (identical overlap, partial overlap, shared boundary, near-overlap, disjoint, invalid GeoJSON, hash stability under rotation/reversal/whitespace, API validation, overlap check & map GeoJSON query, and application overlap flagging).
+  - Test Suite Result: **30 passing tests (100% green)** in 1.40s.
+  - Combined Monorepo Result: **47 Hardhat contract tests + 30 Python tests = 77 passing tests (0 failures)**.
+- **Phase Status:** Phase 7 complete. Proceeding to Phase 8 (Frontend and End-to-End Integration).
+

@@ -8,6 +8,7 @@ from backend.app.api.v1.auth import router as auth_router
 from backend.app.api.v1.applications import router as applications_router
 from backend.app.api.v1.lands import router as lands_router
 from backend.app.api.v1.documents import router as documents_router
+from backend.app.api.v1.geospatial import router as geospatial_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -41,6 +42,7 @@ app.include_router(auth_router, prefix="/api/v1")
 app.include_router(applications_router, prefix="/api/v1")
 app.include_router(lands_router, prefix="/api/v1")
 app.include_router(documents_router, prefix="/api/v1")
+app.include_router(geospatial_router, prefix="/api/v1")
 
 @app.get("/health", tags=["Health"])
 async def health_check():
