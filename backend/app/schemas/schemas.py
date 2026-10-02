@@ -185,4 +185,45 @@ class GeometryIntegrityResponse(BaseModel):
     is_intact: bool
     status: str # MATCH, DRIFT_DETECTED
 
+# --- Escrow Read-Model Schemas ---
+class EscrowItemResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    request_id: int
+    land_id: int
+    buyer_identity_id: str
+    seller_identity_id: str
+    buyer_wallet: Optional[str] = None
+    agreed_price: float
+    deposit_amount: float
+    state: str
+    approval_count: int
+    has_senior_approval: bool
+    expires_at: datetime
+    funded_at: Optional[datetime] = None
+    settled_at: Optional[datetime] = None
+    rejection_reason: Optional[str] = None
+    cancellation_reason: Optional[str] = None
+
+# --- System & Audit Schemas ---
+class SyncStatusResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    contract_name: str
+    contract_address: str
+    chain_id: int
+    last_processed_block: int
+    updated_at: datetime
+
+class AuditLogResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    action: str
+    actor_identity_id: Optional[str] = None
+    actor_wallet: Optional[str] = None
+    details: Optional[Dict[str, Any]] = None
+    timestamp: datetime
+
+
 

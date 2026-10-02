@@ -3,8 +3,10 @@
 [![Ethereum Sepolia](https://img.shields.io/badge/Network-Ethereum%20Sepolia-blue)](https://sepolia.etherscan.io)
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.24-363636?logo=solidity)](https://soliditylang.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
-[![Tests](https://img.shields.io/badge/Tests-67%20Passing-brightgreen)](#testing--verification)
+[![React 18](https://img.shields.io/badge/Frontend-React%2018%20%2B%20Vite-61DAFB?logo=react)](frontend/)
+[![Tests](https://img.shields.io/badge/Tests-80%20Passing-brightgreen)](#testing--verification)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 
 **Cadastra** is a hierarchical, identity-bound, blockchain-based land registry with escrow-secured ownership transfer, geospatial duplicate prevention, tamper-evident document storage, and event-driven off-chain synchronization.
 
@@ -122,10 +124,11 @@ python -m pytest backend/tests/ indexer/tests/ -v
 - [x] **Phase 5:** Event Indexer & Read Model
 - [x] **Phase 6:** Documents & Large-File Storage (MinIO S3 Multipart & Manifest Hashing)
 - [x] **Phase 7:** Geospatial Validation & Maps (PostGIS Spatial Overlap & Canonical Geometry)
-- [ ] **Phase 8:** Frontend & End-to-End Integration (Milestone M4)
+- [x] **Phase 8:** Frontend & End-to-End Integration (Milestone M4)
 - [ ] **Phase 9:** Security Hardening & Verification (Milestone M5)
 - [ ] **Phase 10:** Performance Measurement & Research Experiments (RQ1–RQ6)
 - [ ] **Phase 11:** Release, Documentation & Research Paper (Milestone M6)
+
 
 ---
 

@@ -320,4 +320,41 @@ Chronological record of technical decisions, architecture transitions, code chan
   - Total Monorepo Passing Tests: **80 tests (100% green, 0 failures)**.
 - **Audit Conclusion:** All architecture, state machines, financial custody rules, document pipelines, and geospatial logic for Phases 0 through 7 match `Blockchain_Land_Registry_Master_Plan.docx` with 100% fidelity.
 
+---
+
+### [2026-10-03 01:21:00 +05:30] — Phase 8: Frontend and End-to-End Integration (Milestone M4) [COMPLETED]
+- **Context:** Delivering the complete responsive web application for Cadastra, implementing role-based workflows for Citizens, Inspectors, and System Administrators, integrated with the PostgreSQL read model and Ethereum Sepolia contracts.
+- **Components Implemented:**
+  1. **Frontend Architecture & Scaffolding (`frontend/`):**
+     - Scaffolded with Vite and React 18 in `frontend/`.
+     - Pure Vanilla CSS design system (`frontend/src/index.css`) utilizing Obsidian Emerald & Glassmorphic dark palette, modern typography (`Outfit` and `JetBrains Mono`), smooth gradients, and interactive micro-animations.
+     - Configured Vite proxy (`/api` reverse proxying to `http://127.0.0.1:8000`).
+  2. **Service Layer:**
+     - Typed REST API client (`frontend/src/services/api.js`): handles SIWE nonce/verify, KYC onboarding, cadastral drafts, application review, read-model paginated search, spatial overlap evaluation, S3 document uploads, manifest verification, and indexer sync status.
+     - Web3 & Contract Service (`frontend/src/services/web3.js`): manages MetaMask EIP-1193 connections, automatic Ethereum Sepolia (`11155111`) chain switching, message signing, and contract factories for `IdentityRegistry`, `InspectorRegistry`, `LandRegistry`, and `TransferEscrow`.
+  3. **Core Portals & UI Components:**
+     - `Header.jsx`: Network badge (Sepolia indicator), indexer synchronization pill, role badges, portal tab navigation, and wallet connect/disconnect triggers.
+     - `AuthModal.jsx`: Section 5.4 onboarding wizard (MetaMask connection, SIWE EIP-4361 cryptographic signing, mock KYC identity verification, and on-chain wallet binding).
+     - `CadastralMap.jsx`: High-performance Canvas Cadastral Map engine rendering GeoJSON FeatureCollections, supporting pan/zoom, coordinate transformation, and interactive boundary drawing with real-time vertex editing.
+     - `PublicMarketplace.jsx`: Global platform statistics, instant read-model search/filter, parcel cards, and Property Dossier inspection with one-click "Initiate Purchase Escrow" on Sepolia.
+     - `CitizenPortal.jsx`:
+       - 4-step registration stepper (NFKC normalized cadastral attributes, interactive map boundary capture with real-time overlap checking, document upload with client-side SHA-256 preview, and draft submission).
+       - "My Applications & Registered Titles" tracking with one-click on-chain title minting upon inspector approval and forensic document tamper audit.
+       - "Transfer Escrows" view with Buyer payment deposit and Seller pull-payment `withdrawFunds()` execution.
+     - `InspectorPortal.jsx`: Jurisdiction-contained application queue, detailed review drawer with conflicting boundary overlays, approval/rejection triggers, and high-value transfer ($\ge 5$ ETH) authorization queue.
+     - `AdminPortal.jsx`: 4-tier inspector governance management (appoint/revoke inspectors), indexer sync monitoring with on-demand self-healing reconciliation trigger, tamper detection laboratory, and immutable audit logs.
+     - `TransactionModal.jsx`: Interactive Web3 transaction lifecycle modal with mining animation, confirmation status, and direct Sepolia Etherscan transaction links.
+     - `App.jsx`: Root application orchestration with role-based routing and persistent session state.
+  4. **Backend Read-Model Extensions:**
+     - Added `backend/app/api/v1/escrows.py` router for querying transfer escrows from the PostgreSQL read model without direct RPC roundtrips.
+     - Added `backend/app/api/v1/system.py` router for querying indexer sync states, audit logs, and on-demand reconciliation.
+     - Registered routers in `backend/app/main.py` and updated schemas in `backend/app/schemas/schemas.py`.
+- **Validation & Build Metrics:**
+  - Production Bundle: Built successfully via `npm run build` with Vite in 1.58s with zero errors.
+  - Python Backend & Indexer Suite: **31 passing tests (100% green)**.
+  - Hardhat Smart Contract Suite: **49 passing tests (100% green)**.
+  - Total Monorepo Tests: **80 passing tests (0 failures)**.
+- **Phase Status:** Phase 8 complete (Milestone M4 reached). Proceeding to Phase 9 (Security & Adversarial Testing).
+
+
 
