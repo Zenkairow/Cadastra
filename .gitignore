@@ -58,11 +58,21 @@ local_data/
 *.pem
 *.key
 
-# IDEs & System Files
+# IDEs, Editors & Agent Files (Strictly Local)
+.agents/
+.gemini/
+.system_generated/
+.cursor/
+.claude/
 .idea/
 .vscode/
 *.swp
 *.swo
 .DS_Store
 Thumbs.db
+
+# Log Files
+*.log
+*.log.*
+logs/
 
