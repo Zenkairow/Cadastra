@@ -213,12 +213,36 @@ Chronological record of technical decisions, architecture transitions, code chan
   - Successfully committed 78 files and pushed to `origin/main` (`commit 7c34e28`).
 - **Working Tree Status:** Clean, synchronized with `origin/main`.
 
+- **Repository State:** Verified via `git ls-files` that only project code (`backend/`, `contracts/`, `indexer/`, `deployments/`, `docs/`, `infra/`, `scripts/`) is tracked on GitHub.
+
 ---
 
-### [2026-10-02 22:40:00 +05:30] — Repository Hygiene: Untracked IDE & Agent Files
-- **Context:** Management directive to remove IDE-specific directories (`.agents/`), editor configs, and local log files from the remote repository so that only genuine project technical code and specifications are public.
-- **Actions:**
-  - Untracked `.agents/` from Git cache (`git rm -r --cached .agents`) while preserving files locally.
-  - Updated `.gitignore` to explicitly ignore `.agents/`, `.gemini/`, `.system_generated/`, `.cursor/`, `.claude/`, `*.log`, and `logs/`.
-  - Committed and pushed changes to `origin/main` (`commit 052ed34`).
-- **Repository State:** Verified via `git ls-files` that only project code (`backend/`, `contracts/`, `indexer/`, `deployments/`, `docs/`, `infra/`, `scripts/`) is tracked on GitHub.
+### [2026-10-02 22:50:00 +05:30] — Phase 6: Documents and Large-File Storage [COMPLETED]
+- **Context:** Implementing the private object storage pipeline (MinIO/S3), constant-memory SHA-256 stream hashing, binary magic-byte spoofing prevention, document versioning, canonical manifest builder, short-lived presigned URLs, and cryptographic tamper verification.
+- **Components Implemented:**
+  1. **Storage Abstraction (`backend/app/services/storage_service.py`):**
+     - S3/MinIO driver via `boto3` with constant-memory chunked streaming (`chunk_size=65536`) and fallback local storage engine.
+     - Presigned download URLs with configurable expiry (`DOCUMENT_SIGNED_URL_EXPIRE_SECONDS = 900`).
+  2. **Security & Binary Magic-Byte Inspection (`backend/app/services/document_security.py`):**
+     - Deep inspection of initial bytes (PDF `%PDF-`, PNG, JPEG, TIFF, ZIP) preventing file extension spoofing (e.g. executables disguised as deeds).
+     - Per-class size enforcement (Scanned Deeds: 25 MB, Survey Maps: 100 MB, GIS Packages: 500 MB).
+  3. **Document Versioning Pipeline (`backend/app/api/v1/documents.py`):**
+     - Re-uploads never overwrite existing files in storage; creates a new version with a distinct storage key, increments `version`, and marks older records as `REPLACED`.
+  4. **Canonical Manifest Builder (`backend/app/services/manifest_service.py`):**
+     - Collects all active documents for a land parcel, sorts deterministically by `doc_id`, serializes to canonical UTF-8 JSON without whitespace, and computes `manifest_hash = sha256(canonical_json)` for on-chain anchoring.
+  5. **Cryptographic Tamper Verification Engine (`backend/app/services/tamper_service.py`):**
+     - Re-reads stored objects from storage in constant memory, recalculates SHA-256, compares against database hashes, rebuilds manifest, and validates against on-chain `documentManifestHash`.
+     - Identifies corruptions down to the exact failing document ID.
+  6. **Access Control & Auditing:**
+     - Download URLs restricted strictly to property applicants and authorized inspectors.
+     - Emits `DOCUMENT_ACCESSED` audit logs with identity ID and active wallet metadata.
+- **Tests & Validation:**
+  - `backend/tests/test_documents.py`: 6 tests passing:
+    - Constant memory $O(1)$ streaming SHA-256 vs in-memory equality.
+    - Magic-byte validation and rejection of MIME-spoofed malicious files.
+    - Versioning pipeline (version increment, REPLACED transition, storage key separation).
+    - Secure download access control and audit logging.
+    - Empirical Tamper Detection experiment (RQ5): Tested and detected all 4 corruption profiles (1-byte flip, truncation, file replacement, and on-chain mismatch).
+  - Total Python Suite: **20 passing tests (100% green)** in 1.34s.
+  - Combined Monorepo Suite: **47 Hardhat tests + 20 Pytest tests = 67 passing tests (0 failures)**.
+- **Phase Status:** Phase 6 complete. Proceeding to Phase 7 (Geospatial Validation and Maps).

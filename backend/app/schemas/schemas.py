@@ -95,3 +95,43 @@ class PaginatedLandResponse(BaseModel):
     page: int
     size: int
     items: List[LandItemResponse]
+
+# --- Document Schemas ---
+class DocumentItemResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    application_id: Optional[str] = None
+    document_type: str
+    file_name: str
+    mime_type: str
+    file_size_bytes: int
+    sha256_hash: str
+    version: int
+    status: str
+    uploaded_at: datetime
+
+class ManifestResponse(BaseModel):
+    application_id: str
+    manifest_hash: str # SHA-256 (0x...)
+    documents_count: int
+    manifest_json: List[Dict[str, Any]]
+
+class PresignedDownloadResponse(BaseModel):
+    document_id: str
+    file_name: str
+    download_url: str
+    expires_in_seconds: int
+
+class DocumentVerificationResponse(BaseModel):
+    status: str # INTACT, TAMPERED
+    total_documents: int
+    tampered_count: int
+    tampered_documents: List[Dict[str, Any]]
+    checked_documents: List[Dict[str, Any]]
+    stored_db_manifest_hash: Optional[str] = None
+    computed_storage_manifest_hash: str
+    manifest_integrity: str # INTACT, CORRUPTED
+    on_chain_manifest_hash: Optional[str] = None
+    on_chain_integrity: Optional[str] = None
+

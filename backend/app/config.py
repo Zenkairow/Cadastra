@@ -34,6 +34,16 @@ class Settings(BaseSettings):
     def cors_origins(self) -> List[str]:
         return [origin.strip() for origin in self.BACKEND_CORS_ORIGINS.split(",") if origin.strip()]
 
+    # Object Storage (MinIO / AWS S3)
+    STORAGE_TYPE: str = "local" # local, minio, s3
+    STORAGE_LOCAL_ROOT: str = "./local_storage"
+    MINIO_ENDPOINT: str = "http://localhost:9000"
+    MINIO_ACCESS_KEY: str = "minioadmin"
+    MINIO_SECRET_KEY: str = "minioadmin"
+    MINIO_BUCKET: str = "land-documents"
+    MINIO_SECURE: bool = False
+    DOCUMENT_SIGNED_URL_EXPIRE_SECONDS: int = 900 # 15 minutes
+
     class Config:
         env_file = "../.env"
         extra = "ignore"

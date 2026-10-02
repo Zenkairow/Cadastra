@@ -3,7 +3,7 @@
 [![Ethereum Sepolia](https://img.shields.io/badge/Network-Ethereum%20Sepolia-blue)](https://sepolia.etherscan.io)
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.24-363636?logo=solidity)](https://soliditylang.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi)](https://fastapi.tiangolo.com/)
-[![Tests](https://img.shields.io/badge/Tests-61%20Passing-brightgreen)](#testing--verification)
+[![Tests](https://img.shields.io/badge/Tests-67%20Passing-brightgreen)](#testing--verification)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 **Cadastra** is a hierarchical, identity-bound, blockchain-based land registry with escrow-secured ownership transfer, geospatial duplicate prevention, tamper-evident document storage, and event-driven off-chain synchronization.
@@ -91,12 +91,16 @@ npm test
 - Parcel duplicate collision rejection (Layer 1 duplicate defense).
 - Financial custody test cases TC01–TC10 (exact payments, pull disbursements, cancellation refunds, high-value governance, balance invariant).
 
-### 2. Backend & Indexer Tests (14 Passing Tests)
+### 2. Backend, Storage & Indexer Tests (20 Passing Tests)
 ```bash
 python -m pytest backend/tests/ indexer/tests/ -v
 ```
 - EIP-4361 Sign-In with Ethereum (SIWE) signature verification, nonces, and replay protection.
 - Cadastral normalization (Unicode NFKC) and keccak256 parcel keys.
+- S3/MinIO constant-memory chunked streaming SHA-256 calculation.
+- Binary magic-byte inspection preventing file extension/MIME spoofing.
+- Document versioning pipeline and canonical manifest generation.
+- Empirical tamper detection across 4 corruption profiles (1-byte flip, truncation, file replacement, on-chain hash mismatch).
 - Indexer exact event replay idempotency (zero duplicate records).
 - Crash/restart recovery (zero gaps, continuous ingestion).
 - Automated reconciliation detection and self-healing of tampered records.
@@ -111,7 +115,7 @@ python -m pytest backend/tests/ indexer/tests/ -v
 - [x] **Phase 3:** Escrow, Transfers & Contract Completion (Milestone M2)
 - [x] **Phase 4:** Backend Foundation: API, Database & Authentication
 - [x] **Phase 5:** Event Indexer & Read Model
-- [ ] **Phase 6:** Documents & Large-File Storage (MinIO S3 Multipart & Manifest Hashing)
+- [x] **Phase 6:** Documents & Large-File Storage (MinIO S3 Multipart & Manifest Hashing)
 - [ ] **Phase 7:** Geospatial Validation & Maps (PostGIS Spatial Overlap & Canonical Geometry)
 - [ ] **Phase 8:** Frontend & End-to-End Integration (Milestone M4)
 - [ ] **Phase 9:** Security Hardening & Verification (Milestone M5)

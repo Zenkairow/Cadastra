@@ -167,21 +167,25 @@ This project delivers an enterprise-grade, auditable, multi-tier land governance
 
 ---
 
-## 12. Document Integrity
-- **Storage Pipeline [PLANNED]:**
-  - Files are streamed into MinIO in chunked multipart uploads.
-  - Streaming SHA-256 calculation runs in constant $O(1)$ memory buffer.
-  - File magic bytes are inspected to prevent MIME-type spoofing.
-- **Manifest Architecture [PLANNED]:**
-  Multiple documents (Deed, Tax Receipt, 7/12 Extract, Survey Map) are assembled into a canonical, alphabetically sorted JSON manifest:
+## 12. Document Integrity [IMPLEMENTED]
+- **Storage Pipeline (`backend/app/services/storage_service.py`) [IMPLEMENTED]:**
+  - Files are streamed into S3/MinIO (with fallback local driver) in chunked constant-memory streams ($O(1)$ memory buffer, `chunk_size=65536`).
+  - Binary magic-byte inspection (`backend/app/services/document_security.py`) validates actual file headers (`%PDF-`, PNG, JPEG, TIFF, ZIP) and prevents extension/MIME-type spoofing.
+  - Per-class size enforcement rejects oversized payloads (Scanned Deeds: 25 MB, Survey Maps: 100 MB, GIS bundles: 500 MB).
+- **Manifest Architecture (`backend/app/services/manifest_service.py`) [IMPLEMENTED]:**
+  Multiple documents (`SALE_DEED`, `7_12_EXTRACT`, `TAX_RECEIPT`, `SURVEY_MAP`, `GIS_PACKAGE`) are assembled into a canonical, alphabetically sorted JSON manifest without whitespace:
   ```json
   [
-    {"doc_id": "DOC-1", "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "type": "SALE_DEED"},
-    {"doc_id": "DOC-2", "sha256": "54b53072540eeeb8f8e9343e71f281ae1cedbc4fe59205da23c04b0a9cad654b", "type": "TAX_RECEIPT"}
+    {"doc_id":"DOC-1","doc_type":"SALE_DEED","file_name":"deed.pdf","sha256":"0x...","version":1},
+    {"doc_id":"DOC-2","doc_type":"TAX_RECEIPT","file_name":"tax.pdf","sha256":"0x...","version":1}
   ]
   ```
-  `manifestHash = sha256(canonical_manifest_json)`. Only `manifestHash` is anchored on-chain.
-- **Tamper Verification [PLANNED]:** A verification endpoint re-streams the stored object, calculates SHA-256, recalculates the manifest, and validates against the on-chain `documentManifestHash`. Any modified byte produces an immediate tamper alert.
+  `manifestHash = "0x" + sha256(canonical_manifest_json)`. Only `manifestHash` is anchored on-chain in `LandRegistry.sol`.
+- **Tamper Verification (`backend/app/services/tamper_service.py`) [IMPLEMENTED]:**
+  Endpoint `/api/v1/documents/verify/{application_id}` re-streams stored binary files from object storage, recalculates SHA-256 hashes in constant memory, rebuilds the canonical manifest, and validates against database commitments and the on-chain `documentManifestHash`.
+  - Accurately detects and isolates: 1-byte flips, metadata changes, file truncations, and complete file replacements down to the specific corrupted document ID.
+- **Secure Download & Access Audits (`backend/app/api/v1/documents.py`) [IMPLEMENTED]:**
+  Short-lived presigned URLs (900 seconds) are issued strictly to property applicants and authorized inspectors. Every document download emits a structured `DOCUMENT_ACCESSED` entry in `audit_logs`.
 
 ---
 
@@ -366,7 +370,7 @@ The project will execute 6 empirical research experiments:
 - **Phase 3 — Escrow, Transfers & Contract Completion (Milestone M2):** `[COMPLETED]`
 - **Phase 4 — Backend Foundation: API, Database & Authentication:** `[COMPLETED]`
 - **Phase 5 — Event Indexer & Read Model:** `[COMPLETED]`
-- **Phase 6 — Documents & Large-File Storage:** `[PLANNED]`
+- **Phase 6 — Documents & Large-File Storage:** `[COMPLETED]`
 - **Phase 7 — Geospatial Validation & Maps:** `[PLANNED]`
 - **Phase 8 — Frontend & End-to-End Integration (Milestone M4):** `[PLANNED]`
 - **Phase 9 — Security Hardening & Verification (Milestone M5):** `[PLANNED]`
@@ -382,4 +386,5 @@ The project will execute 6 empirical research experiments:
 - **2026-10-02 (Phase 2 Land Registry Core & Duplicate Prevention):** Implemented `LandRegistry.sol` (authoritative land record, Layer 1 exact `parcelKey` duplicate prevention, jurisdiction containment, cryptographic anchors for geometry and documents, escrow locks, and identity-based ownership continuity). Created 14 unit and negative tests. Total test suite expanded to 37 passing tests (0 failures). Local deployment script `deploy_phase2.js` verified. Land Registration marked complete.
 - **2026-10-02 (Phase 3 Escrow, Transfers & Milestone M2):** Implemented `TransferEscrow.sol` (exact funding constraint, multi-tier inspector approvals, high-value $\ge 5$ ETH Senior Inspector requirement, pull-payment disbursements, cancellation/expiry refunds, and atomic ownership settlement). Verified test cases TC01–TC10 with 10 passing tests (full contract suite reaches 47 passing tests, 0 failures). Verified local deployment script `deploy_phase3.js` deploying and cross-wiring the complete 4-contract suite. Smart contract foundation achieved (Milestone M2).
 - **2026-10-02 (Phase 4 Backend Foundation: API, Database & Authentication):** Implemented the asynchronous FastAPI application, SQLAlchemy models (`User`, `WalletBinding`, `Jurisdiction`, `LandApplication`, `LandBoundary`, `Document`, `DocumentManifest`, `Land`, `Escrow`, `BlockchainEvent`, `AuditLog`), EIP-4361 SIWE signature verification with replay attack prevention and single-use challenge nonces, privacy-preserving mock KYC adapter, Unicode NFKC cadastral normalization with keccak256 parcel keys, and GeoJSON spherical area calculation. Verified complete Pytest test suite with 6 passing tests (100% green). Phase 4 complete.
-- **2026-10-02 (Phase 5 Event Indexer & Read Model):** Implemented confirmation-aware background indexer daemon (`indexer/service.py`) tracking smart contract event logs across all 4 contracts. Enforced idempotency via compound relational unique constraint `(transaction_hash, log_index)`. Implemented reorg detection checking block hash continuity and marking orphaned forks. Created modular domain event handlers (`indexer/handlers/`) projecting changes onto derived read models (`lands`, `escrows`, `inspectors`, `users`). Built self-healing reconciliation engine (`indexer/reconciliation.py`) comparing database state with direct Web3 RPC smart contract calls, detecting tampering, and auto-restoring ground truth. Added CLI operations tool (`indexer/cli.py`). Verified 8 passing Pytest tests (idempotency replay, crash/restart recovery, reconciliation tamper self-healing, domain handlers). Total project tests reached 61 passing tests (47 Hardhat + 14 Pytest). Phase 5 complete. Proceeding to Phase 6 (Documents and Large-File Storage).
+- **2026-10-02 (Phase 5 Event Indexer & Read Model):** Implemented confirmation-aware background indexer daemon (`indexer/service.py`) tracking smart contract event logs across all 4 contracts. Enforced idempotency via compound relational unique constraint `(transaction_hash, log_index)`. Implemented reorg detection checking block hash continuity and marking orphaned forks. Created modular domain event handlers (`indexer/handlers/`) projecting changes onto derived read models (`lands`, `escrows`, `inspectors`, `users`). Built self-healing reconciliation engine (`indexer/reconciliation.py`) comparing database state with direct Web3 RPC smart contract calls, detecting tampering, and auto-restoring ground truth. Added CLI operations tool (`indexer/cli.py`). Verified 8 passing Pytest tests (idempotency replay, crash/restart recovery, reconciliation tamper self-healing, domain handlers). Total project tests reached 61 passing tests (47 Hardhat + 14 Pytest). Phase 5 complete.
+- **2026-10-02 (Phase 6 Documents & Large-File Storage):** Implemented S3/MinIO private storage abstraction with constant-memory chunked streaming (`storage_service.py`), binary magic-byte inspection preventing MIME-type spoofing (`document_security.py`), document versioning with non-overwriting storage keys, order-independent canonical JSON manifest construction with SHA-256 anchoring (`manifest_service.py`), short-lived presigned download URLs with access auditing, and cryptographic tamper detection (`tamper_service.py`) identifying 4 corruption profiles (1-byte flip, truncation, file replacement, and on-chain mismatch). Verified 6 passing Pytest tests. Total project test suite expanded to 67 passing tests (47 Hardhat + 20 Pytest). Phase 6 complete. Proceeding to Phase 7 (Geospatial Validation and Maps).

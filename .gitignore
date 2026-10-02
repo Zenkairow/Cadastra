@@ -50,6 +50,7 @@ htmlcov/
 *.sqlite3
 *.db
 local_data/
+local_storage/
 
 # Environment Variables & Secrets
 .env
