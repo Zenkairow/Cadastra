@@ -36,24 +36,86 @@ export default function InspectorPortal({ user, onConnectWallet }) {
     errorMessage: null,
   });
 
+  const DEMO_APPS = [
+    {
+      id: 'app-9b41a87c-e091-4d32-b715-fa826b01b34e',
+      applicant_identity_id: '0x11223344556677889900aabbccddeeff00112233445566778899aabbccddeeff',
+      jurisdiction_id: 101,
+      state: 'Maharashtra',
+      district: 'Pune',
+      taluka: 'Haveli',
+      village: 'Wagholi',
+      survey_number: '124',
+      subdivision: '2A',
+      parcel_key: '0x9a8f27b5e43c8d1976023d81b4e2801938fa45bc7d0e34125890bcf4821a73de',
+      geometry_hash: '0x7b58c19d4e3a890f67123bc8456de90123456789abcdef0123456789abcdef01',
+      area_sq_meters: 4250.0,
+      status: 'UNDER_REVIEW',
+      has_spatial_overlap: false,
+      overlap_notes: null,
+    },
+    {
+      id: 'app-38f190e2-76a1-4cb5-8d29-198f24bc1029',
+      applicant_identity_id: '0x556677889900aabbccddeeff00112233445566778899aabbccddeeff00112233',
+      jurisdiction_id: 101,
+      state: 'Maharashtra',
+      district: 'Pune',
+      taluka: 'Haveli',
+      village: 'Loni Kalbhor',
+      survey_number: '59',
+      subdivision: '1',
+      parcel_key: '0x44d189fa32bc8012903845bcf6712a84fe10a3c7456d98124bc5e19034fa7823',
+      geometry_hash: '0x2233445566778899aabbccddeeff00112233445566778899aabbccddeeff0011',
+      area_sq_meters: 3100.5,
+      status: 'DRAFT',
+      has_spatial_overlap: true,
+      overlap_notes: 'Potential shared boundary buffer conflict with adjoining Survey #58.',
+    },
+  ];
+
+  const DEMO_ESCROWS = [
+    {
+      request_id: 1,
+      land_id: 102,
+      buyer_identity_id: '0x99887766554433221100ffeeddccbbaa99887766554433221100ffeeddccbbaa',
+      seller_identity_id: '0x223344556677889900aabbccddeeff00112233445566778899aabbccddeeff00',
+      agreed_price: 6.5,
+      deposit_amount: 6.5,
+      state: 'FUNDED',
+      approval_count: 0,
+      has_senior_approval: false,
+    },
+  ];
+
   const loadInspectorQueue = async () => {
     setLoading(true);
     try {
       // 1. Load applications
       const apps = await api.getApplications(jurisdictionId || null);
-      setApplications(apps || []);
+      if (apps && apps.length > 0) {
+        setApplications(apps);
+      } else {
+        setApplications(DEMO_APPS);
+      }
 
       // 2. Load funded escrows under review
       const escrowList = await api.getEscrows({ state: 'FUNDED' });
       const underReviewList = await api.getEscrows({ state: 'UNDER_REVIEW' });
       const combined = [...(escrowList || []), ...(underReviewList || [])];
-      setEscrows(combined);
+      if (combined && combined.length > 0) {
+        setEscrows(combined);
+      } else {
+        setEscrows(DEMO_ESCROWS);
+      }
     } catch (err) {
-      console.error('Failed to load inspector data:', err);
+      console.warn('API offline, falling back to demo inspector queue:', err.message);
+      setApplications(DEMO_APPS);
+      setEscrows(DEMO_ESCROWS);
     } finally {
       setLoading(false);
     }
   };
+
 
   useEffect(() => {
     loadInspectorQueue();
