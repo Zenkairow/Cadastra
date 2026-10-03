@@ -11,9 +11,10 @@ import {
   Sparkles,
   ArrowRight,
   UserPlus,
-  RefreshCw,
   Building2,
-  FileText
+  FileText,
+  Copy,
+  Check
 } from 'lucide-react';
 import { ethers } from 'ethers';
 import { web3Service } from '../services/web3';
@@ -77,19 +78,18 @@ const DEMO_ACCOUNTS = [
 ];
 
 export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
-  const [step, setStep] = useState(1); // 1: Connect, 2: Sign, 3: KYC (if new), 4: Complete
+  const [step, setStep] = useState(1); // 1: Connect / Form, 2: Sign (MetaMask), 3: KYC, 4: Complete
   const [wallet, setWallet] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [copiedKey, setCopiedKey] = useState(false);
   
-  // Custom wallet registration state
-  const [showCustomRegister, setShowCustomRegister] = useState(false);
-  const [customWalletAddress, setCustomWalletAddress] = useState('');
-
-  // KYC Form State
+  // Registration form state
+  const [showRegisterForm, setShowRegisterForm] = useState(false);
   const [fullName, setFullName] = useState('');
   const [nationalId, setNationalId] = useState('');
   const [kycResult, setKycResult] = useState(null);
+  const [generatedWallet, setGeneratedWallet] = useState(null);
 
   const hasMetaMask = web3Service.isMetaMaskAvailable();
 
@@ -101,13 +101,15 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
       setFullName('');
       setNationalId('');
       setKycResult(null);
-      setShowCustomRegister(false);
-      setCustomWalletAddress('');
+      setGeneratedWallet(null);
+      setShowRegisterForm(false);
+      setCopiedKey(false);
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
 
+  // Web3 MetaMask Connect Flow
   const handleConnectWallet = async () => {
     setLoading(true);
     setError('');
@@ -131,27 +133,20 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
     setLoading(true);
     setError('');
     try {
-      // 1. Fetch challenge nonce from backend
       const nonceData = await api.getNonce(wallet);
       const nonce = nonceData.nonce;
 
-      // 2. Build EIP-4361 SIWE formatted challenge
       const domain = window.location.host || 'localhost:3000';
       const siweMessage = `${domain} wants you to sign in with your Ethereum account:\n${wallet}\n\nURI: http://${domain}\nVersion: 1\nChain ID: ${web3Service.chainId || 11155111}\nNonce: ${nonce}\nIssued At: ${new Date().toISOString()}`;
 
-      // 3. Request signature from MetaMask
       const signature = await web3Service.signMessage(siweMessage);
-
-      // 4. Verify signature on backend
       const authResponse = await api.verifySignature(siweMessage, signature);
       
-      // If user already has verified KYC and identity, finish!
       if (authResponse.user && authResponse.user.kyc_status === 'VERIFIED') {
         onAuthSuccess(authResponse.user, wallet);
         onClose();
       } else {
-        // If first-time user, prompt KYC onboarding
-        setStep(3);
+        setStep(3); // First-time user, prompt KYC onboarding
       }
     } catch (err) {
       setError(err.message || 'Signature verification failed.');
@@ -174,27 +169,40 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
     }
   };
 
-  const handleCustomRegisterPrompt = () => {
-    if (!customWalletAddress || !customWalletAddress.match(/^0x[a-fA-F0-9]{40}$/)) {
-      setError('Please provide a valid 42-character Ethereum address (0x...)');
+  // Normal Web2-Style Citizen Registration (Auto-generates secure wallet)
+  const handleAutoRegister = async (e) => {
+    e.preventDefault();
+    if (!fullName || !nationalId) {
+      setError('Please provide your legal name and national ID.');
       return;
     }
-    setWallet(customWalletAddress.toLowerCase());
-    setStep(3); // Go straight to KYC
-  };
 
-  const handleGenerateRandomWallet = () => {
+    setLoading(true);
+    setError('');
     try {
-      const randomWallet = ethers.Wallet.createRandom();
-      setCustomWalletAddress(randomWallet.address);
-      setError('');
-    } catch (e) {
-      // Fallback pseudo-random wallet
-      const randHex = '0x' + Array.from({length: 40}, () => Math.floor(Math.random() * 16).toString(16)).join('');
-      setCustomWalletAddress(randHex);
+      // 1. Generate a secure, dedicated Ethereum wallet keypair for the citizen
+      const newWallet = ethers.Wallet.createRandom();
+      setGeneratedWallet(newWallet);
+      const assignedAddress = newWallet.address.toLowerCase();
+      setWallet(assignedAddress);
+
+      // 2. Perform Zero-PII KYC Verification
+      const kycRes = await api.verifyKYC(nationalId, fullName);
+      setKycResult(kycRes);
+
+      // 3. Register user profile and bind generated wallet in database
+      const loginRes = await api.demoLogin(assignedAddress, 'CITIZEN');
+
+      // 4. Move to confirmation & credential display
+      setStep(4);
+    } catch (err) {
+      setError(err.message || 'Citizen registration failed.');
+    } finally {
+      setLoading(false);
     }
   };
 
+  // KYC Onboarding for MetaMask connected users
   const handleKYCOnboarding = async (e) => {
     e.preventDefault();
     if (!fullName || !nationalId) {
@@ -208,9 +216,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
       const kycRes = await api.verifyKYC(nationalId, fullName);
       setKycResult(kycRes);
       
-      // Complete user registration in backend
       const loginRes = await api.demoLogin(wallet, 'CITIZEN');
-      
       onAuthSuccess(loginRes.user, wallet);
       setStep(4);
       setTimeout(() => {
@@ -220,6 +226,14 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
       setError(err.message || 'KYC verification failed.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCopyPrivateKey = () => {
+    if (generatedWallet) {
+      navigator.clipboard.writeText(generatedWallet.privateKey);
+      setCopiedKey(true);
+      setTimeout(() => setCopiedKey(false), 2000);
     }
   };
 
@@ -274,32 +288,8 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
           </div>
           <h2 style={{ fontSize: '1.35rem', fontWeight: 700, marginBottom: '4px' }}>Cadastra Authentication</h2>
           <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', margin: 0 }}>
-            EIP-4361 Sign-In with Ethereum & Zero-PII Identity Governance
+            Self-Sovereign Identity & Zero-PII Land Registry Governance
           </p>
-        </div>
-
-        {/* Stepper Indicator */}
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
-          {[1, 2, 3].map((num) => (
-            <div key={num} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{
-                width: '26px',
-                height: '26px',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '0.78rem',
-                fontWeight: 600,
-                background: step === num ? 'var(--accent-emerald)' : step > num ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.08)',
-                color: step >= num ? '#ffffff' : 'var(--text-muted)',
-                border: step === num ? '2px solid rgba(255, 255, 255, 0.4)' : 'none'
-              }}>
-                {step > num ? <CheckCircle2 size={15} color="var(--accent-emerald)" /> : num}
-              </div>
-              {num < 3 && <div style={{ width: '24px', height: '2px', background: step > num ? 'var(--accent-emerald)' : 'var(--border-subtle)' }}></div>}
-            </div>
-          ))}
         </div>
 
         {error && (
@@ -320,7 +310,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
           </div>
         )}
 
-        {/* Step 1: Connect Wallet / Choose Profile */}
+        {/* Step 1: Login Options & Normal Citizen Registration */}
         {step === 1 && (
           <div>
             {/* MetaMask Option */}
@@ -329,18 +319,18 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
               border: '1px solid rgba(255, 255, 255, 0.08)',
               borderRadius: '14px',
               padding: '16px',
-              marginBottom: '18px'
+              marginBottom: '16px'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#f1f5f9', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Wallet size={16} color="var(--accent-emerald)" /> Connect Web3 Wallet
                 </span>
                 <span className="badge" style={{ fontSize: '0.7rem', background: 'rgba(99, 102, 241, 0.15)', color: '#a5b4fc' }}>
-                  Sepolia / Local
+                  Sepolia Live
                 </span>
               </div>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '12px', lineHeight: 1.4 }}>
-                Connect your browser's MetaMask extension to sign the cryptographic EIP-4361 challenge.
+                Connect your browser's MetaMask extension to sign the cryptographic challenge.
               </p>
               <button 
                 className="btn btn-primary" 
@@ -353,12 +343,105 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
               </button>
             </div>
 
-            {/* Quick Demo Profiles */}
+            {/* Normal Citizen Registration (No wallet required upfront) */}
             <div style={{ marginBottom: '18px' }}>
+              {!showRegisterForm ? (
+                <div style={{
+                  background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.08), rgba(16, 185, 129, 0.08))',
+                  border: '1px dashed rgba(6, 182, 212, 0.3)',
+                  borderRadius: '14px',
+                  padding: '14px 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '12px'
+                }}>
+                  <div>
+                    <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#f8fafc', marginBottom: '2px' }}>
+                      New Citizen? Register with Simple Form
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                      No crypto wallet needed. Fill name & ID, and we create your secure wallet automatically.
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-cyan"
+                    style={{ padding: '8px 14px', fontSize: '0.82rem', whiteSpace: 'nowrap' }}
+                    onClick={() => setShowRegisterForm(true)}
+                  >
+                    <UserPlus size={14} /> Register Here
+                  </button>
+                </div>
+              ) : (
+                <form 
+                  onSubmit={handleAutoRegister} 
+                  style={{
+                    background: 'rgba(6, 182, 212, 0.06)',
+                    border: '1px solid rgba(6, 182, 212, 0.3)',
+                    borderRadius: '14px',
+                    padding: '16px'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                    <span style={{ fontSize: '0.9rem', fontWeight: 600, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <UserPlus size={16} color="var(--accent-cyan)" /> Citizen Registration (Auto-Wallet)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowRegisterForm(false)}
+                      style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.78rem', cursor: 'pointer' }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+                    Simply enter your details. We will automatically generate your secure cadastral wallet and bind your Zero-PII identity.
+                  </p>
+
+                  <div className="form-group" style={{ marginBottom: '10px' }}>
+                    <label className="form-label" style={{ fontSize: '0.8rem', marginBottom: '4px' }}>Full Legal Name</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="e.g. Ramesh Kumar"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group" style={{ marginBottom: '14px' }}>
+                    <label className="form-label" style={{ fontSize: '0.8rem', marginBottom: '4px' }}>National Identity Number (Aadhaar / ID)</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="e.g. 5432-8976-1234"
+                      value={nationalId}
+                      onChange={(e) => setNationalId(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="btn btn-cyan"
+                    style={{ width: '100%', padding: '10px 14px', fontSize: '0.88rem' }}
+                    disabled={loading}
+                  >
+                    {loading ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
+                    Create Account & Auto-Generate Wallet
+                  </button>
+                </form>
+              )}
+            </div>
+
+            {/* Quick Demo Profiles */}
+            <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                 <Sparkles size={15} color="#38bdf8" />
-                <span style={{ fontSize: '0.84rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  Quick Demo Profiles (Instant Sign-in)
+                <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Quick Sign-In (Pre-Configured Roles)
                 </span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -424,67 +507,10 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                 })}
               </div>
             </div>
-
-            {/* Custom Wallet Registration Toggle */}
-            <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '12px' }}>
-              {!showCustomRegister ? (
-                <button
-                  type="button"
-                  onClick={() => setShowCustomRegister(true)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: 'var(--accent-cyan)',
-                    fontSize: '0.82rem',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    margin: '0 auto',
-                    padding: '4px 8px'
-                  }}
-                >
-                  <UserPlus size={14} /> Register New Citizen Wallet
-                </button>
-              ) : (
-                <div style={{ background: 'rgba(6, 182, 212, 0.05)', border: '1px solid rgba(6, 182, 212, 0.2)', borderRadius: '12px', padding: '14px' }}>
-                  <label className="form-label" style={{ fontSize: '0.82rem', marginBottom: '6px' }}>
-                    Citizen Ethereum Address
-                  </label>
-                  <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
-                    <input
-                      type="text"
-                      className="form-input mono"
-                      style={{ fontSize: '0.82rem', padding: '8px 10px' }}
-                      placeholder="0x..."
-                      value={customWalletAddress}
-                      onChange={(e) => setCustomWalletAddress(e.target.value)}
-                    />
-                    <button
-                      type="button"
-                      className="btn btn-outline"
-                      style={{ padding: '8px 12px' }}
-                      title="Generate Test Address"
-                      onClick={handleGenerateRandomWallet}
-                    >
-                      <RefreshCw size={14} />
-                    </button>
-                  </div>
-                  <button
-                    type="button"
-                    className="btn btn-cyan"
-                    style={{ width: '100%', padding: '9px 12px', fontSize: '0.85rem' }}
-                    onClick={handleCustomRegisterPrompt}
-                  >
-                    Proceed to Citizen KYC &rarr;
-                  </button>
-                </div>
-              )}
-            </div>
           </div>
         )}
 
-        {/* Step 2: Sign In with Ethereum */}
+        {/* Step 2: Sign In with Ethereum (MetaMask Flow) */}
         {step === 2 && (
           <div style={{ textAlign: 'center', padding: '12px 0' }}>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem', marginBottom: '14px' }}>
@@ -505,7 +531,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
           </div>
         )}
 
-        {/* Step 3: KYC Verification */}
+        {/* Step 3: KYC Verification (For first-time MetaMask users) */}
         {step === 3 && (
           <form onSubmit={handleKYCOnboarding} style={{ padding: '8px 0' }}>
             <div style={{
@@ -560,14 +586,87 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
           </form>
         )}
 
-        {/* Step 4: Verification Success */}
+        {/* Step 4: Verification Success & Credentials */}
         {step === 4 && (
-          <div style={{ textAlign: 'center', padding: '24px 0' }}>
-            <CheckCircle2 size={48} color="var(--accent-emerald)" style={{ margin: '0 auto 12px' }} />
-            <h3 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>Identity Successfully Verified!</h3>
-            <p className="mono" style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-              Identity ID: {kycResult?.identity_id}
+          <div style={{ textAlign: 'center', padding: '12px 0' }}>
+            <CheckCircle2 size={48} color="var(--accent-emerald)" style={{ margin: '0 auto 10px' }} />
+            <h3 style={{ fontSize: '1.25rem', marginBottom: '4px' }}>Citizen Identity Registered!</h3>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+              Zero-PII identity commitment created and anchored on Ethereum Sepolia.
             </p>
+
+            <div style={{
+              background: 'rgba(15, 23, 42, 0.75)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: '12px',
+              padding: '14px',
+              textAlign: 'left',
+              marginBottom: '16px'
+            }}>
+              <div style={{ marginBottom: '10px' }}>
+                <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Cryptographic Identity Commitment:</span>
+                <div className="mono" style={{ fontSize: '0.78rem', color: 'var(--accent-emerald)', wordBreak: 'break-all', marginTop: '2px' }}>
+                  {kycResult?.identity_id}
+                </div>
+              </div>
+              <div style={{ marginBottom: generatedWallet ? '10px' : '0' }}>
+                <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Bound Cadastral Wallet Address:</span>
+                <div className="mono" style={{ fontSize: '0.78rem', color: '#f8fafc', wordBreak: 'break-all', marginTop: '2px' }}>
+                  {wallet}
+                </div>
+              </div>
+              {generatedWallet && (
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
+                    <span style={{ fontSize: '0.74rem', color: '#fbbf24' }}>Generated Private Key (Deed Control Key):</span>
+                    <button
+                      type="button"
+                      onClick={handleCopyPrivateKey}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: copiedKey ? 'var(--accent-emerald)' : '#a5b4fc',
+                        fontSize: '0.72rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      {copiedKey ? <Check size={12} /> : <Copy size={12} />}
+                      {copiedKey ? 'Copied!' : 'Copy Key'}
+                    </button>
+                  </div>
+                  <div className="mono" style={{
+                    fontSize: '0.72rem',
+                    color: '#fef08a',
+                    wordBreak: 'break-all',
+                    background: 'rgba(245, 158, 11, 0.1)',
+                    border: '1px solid rgba(245, 158, 11, 0.25)',
+                    padding: '6px 8px',
+                    borderRadius: '6px'
+                  }}>
+                    {generatedWallet.privateKey}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <button
+              className="btn btn-primary"
+              style={{ width: '100%', padding: '12px', fontSize: '0.9rem' }}
+              onClick={() => {
+                onAuthSuccess({
+                  identity_id: kycResult?.identity_id,
+                  active_wallet: wallet,
+                  role: 'CITIZEN',
+                  kyc_status: 'VERIFIED'
+                }, wallet);
+                onClose();
+              }}
+            >
+              Enter Citizen Portal &rarr;
+            </button>
           </div>
         )}
 
