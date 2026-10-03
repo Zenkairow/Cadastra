@@ -1,0 +1,31 @@
+{
+  "network": "hardhat",
+  "chainId": 31337,
+  "contracts": {
+    "IdentityRegistry": {
+      "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+      "transactionHash": "0xc3f2d794959bfd9833f842451a5ebdeaa9dab5fae5cc09f043c7d563ec67f2d9",
+      "blockNumber": 1,
+      "verified": false
+    },
+    "InspectorRegistry": {
+      "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+      "transactionHash": "0x293304777246ffc71b9311382518e8defc21d2ce0f4ea8aed77ca18f94a8706d",
+      "blockNumber": 2,
+      "verified": false
+    },
+    "LandRegistry": {
+      "address": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+      "transactionHash": "0x83e2a99fad6047b51062a143e18c6e1ed3285f9ecd8d0b73c2e653cc1e757253",
+      "blockNumber": 3,
+      "verified": false
+    },
+    "TransferEscrow": {
+      "address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+      "transactionHash": "0x4993a3fd948b7232c8ff59669cadca1d83cd13057d59febd2fc68152989587c8",
+      "blockNumber": 4,
+      "verified": false
+    }
+  },
+  "lastUpdated": "2026-10-03T11:56:39.005Z"
+}
