@@ -21,6 +21,15 @@ import { api } from '../services/api';
 
 const DEMO_ACCOUNTS = [
   {
+    role: 'ADMIN',
+    name: 'Deployer Admin (Sepolia Wallet)',
+    wallet: '0x9f4e1425010C383A1818d9daBf55f0Aa2FaF6811',
+    detail: 'Sepolia contract deployer & root governance authority',
+    tag: 'Sepolia Admin',
+    tagColor: '#38bdf8',
+    icon: Building2
+  },
+  {
     role: 'CITIZEN',
     name: 'Alice (Landowner / Citizen)',
     wallet: '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65',

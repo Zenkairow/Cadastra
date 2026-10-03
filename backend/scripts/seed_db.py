@@ -45,6 +45,7 @@ async def seed():
 
         # 2. Key Role Users & Wallets
         print("[2/6] Seeding Key Users & Identity Bindings...")
+        deployer_wallet = "0x9f4e1425010C383A1818d9daBf55f0Aa2FaF6811".lower()
         admin_wallet = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266".lower()
         registrar_pune = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8".lower()
         senior_pune = "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC".lower()
@@ -53,6 +54,7 @@ async def seed():
         bob_wallet = "0x9965507D1a55bcC2695C58ba16FB37d819B0A4df".lower()
 
         actors = [
+            {"wallet": deployer_wallet, "role": "ADMIN", "name": "Sepolia Deployer Admin", "ref": "GOV-SEPOLIA-01"},
             {"wallet": admin_wallet, "role": "ADMIN", "name": "System Administrator", "ref": "GOV-ADMIN-00"},
             {"wallet": registrar_pune, "role": "REGISTRAR", "name": "Registrar Pune", "ref": "REV-REG-101"},
             {"wallet": senior_pune, "role": "SENIOR_INSPECTOR", "name": "Senior Inspector Pune", "ref": "INSP-SR-101"},
