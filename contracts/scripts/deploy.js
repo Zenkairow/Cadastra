@@ -101,6 +101,29 @@ async function main() {
   fs.writeFileSync(outFile, JSON.stringify(deploymentData, null, 2));
   console.log(`\nDeployment details written to: ${outFile}`);
 
+  // Automatically update root .env
+  const rootEnvPath = path.join(__dirname, "..", "..", ".env");
+  if (fs.existsSync(rootEnvPath)) {
+    let envContent = fs.readFileSync(rootEnvPath, "utf8");
+    envContent = envContent.replace(/IDENTITY_REGISTRY_ADDRESS=.*/, `IDENTITY_REGISTRY_ADDRESS="${identityRegistryAddress}"`);
+    envContent = envContent.replace(/INSPECTOR_REGISTRY_ADDRESS=.*/, `INSPECTOR_REGISTRY_ADDRESS="${inspectorRegistryAddress}"`);
+    envContent = envContent.replace(/LAND_REGISTRY_ADDRESS=.*/, `LAND_REGISTRY_ADDRESS="${landRegistryAddress}"`);
+    envContent = envContent.replace(/TRANSFER_ESCROW_ADDRESS=.*/, `TRANSFER_ESCROW_ADDRESS="${transferEscrowAddress}"`);
+    fs.writeFileSync(rootEnvPath, envContent);
+    console.log("Updated root .env with deployed contract addresses.");
+  }
+
+  // Automatically update frontend .env
+  const frontendEnvPath = path.join(__dirname, "..", "..", "frontend", ".env");
+  const frontendEnvContent = `# Automatically generated from ${network} deployment (${new Date().toISOString()})\n` +
+    `VITE_IDENTITY_REGISTRY_ADDRESS="${identityRegistryAddress}"\n` +
+    `VITE_INSPECTOR_REGISTRY_ADDRESS="${inspectorRegistryAddress}"\n` +
+    `VITE_LAND_REGISTRY_ADDRESS="${landRegistryAddress}"\n` +
+    `VITE_TRANSFER_ESCROW_ADDRESS="${transferEscrowAddress}"\n` +
+    `VITE_CHAIN_ID=${chainId}\n`;
+  fs.writeFileSync(frontendEnvPath, frontendEnvContent);
+  console.log("Updated frontend/.env with deployed contract addresses.");
+
   console.log("\n==========================================================");
   console.log("Environment Variables Configuration:");
   console.log("==========================================================");

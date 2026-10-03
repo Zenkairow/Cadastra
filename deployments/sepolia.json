@@ -3,29 +3,29 @@
   "chainId": 11155111,
   "contracts": {
     "IdentityRegistry": {
-      "address": null,
-      "transactionHash": null,
+      "address": "0xE720C035317c132870ad971041Cf1c7f7530f988",
+      "transactionHash": "0xba4bcefce65e2fca023ec5f5f4a151e420e40f4b78f6d06b2e7534c5f23ddbc5",
       "blockNumber": null,
       "verified": false
     },
     "InspectorRegistry": {
-      "address": null,
-      "transactionHash": null,
+      "address": "0x5E7dBcc2D6a83D267739a9B13711850A49e3Bf2a",
+      "transactionHash": "0x7742e4c2aa504ad8c228c5fe80e345ee5630a6f0c3f3010641599893b5f6aa82",
       "blockNumber": null,
       "verified": false
     },
     "LandRegistry": {
-      "address": null,
-      "transactionHash": null,
+      "address": "0x16580F1D8eb4Dd4eA3aa377C08FA0a7AE79Cd8B0",
+      "transactionHash": "0x4d9297c3469addab579971aed9870210948c64835ce44621deafb9d458d7c0af",
       "blockNumber": null,
       "verified": false
     },
     "TransferEscrow": {
-      "address": null,
-      "transactionHash": null,
+      "address": "0x0A09A5c1b418888AA5fa2edcB58d998380f98E52",
+      "transactionHash": "0xd078de4aeb5071ac64bcd2bbd1724b996216bbc6ed6723a4f381d8bc33f071c1",
       "blockNumber": null,
       "verified": false
     }
   },
-  "lastUpdated": "2026-10-02T13:00:00Z"
+  "lastUpdated": "2026-10-03T13:21:00.674Z"
 }
