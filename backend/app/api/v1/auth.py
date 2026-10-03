@@ -4,12 +4,14 @@ from sqlalchemy import select
 from datetime import datetime
 
 from backend.app.database import get_db
-from backend.app.schemas.schemas import NonceResponse, VerifySignatureRequest, TokenResponse, UserResponse
+from backend.app.schemas.schemas import (
+    NonceResponse, VerifySignatureRequest, TokenResponse, UserResponse,
+    KYCVerifyRequest, KYCVerifyResponse, WalletRecoveryRequest
+)
 from backend.app.services.auth_service import auth_service
 from backend.app.services.kyc_adapter import kyc_adapter
 from backend.app.models.models import User, WalletBinding
 from backend.app.api.dependencies import get_current_user
-
 from backend.app.api.rate_limiter import auth_rate_limiter
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -22,7 +24,6 @@ async def get_login_nonce(wallet_address: str = Query(..., pattern=r"^0x[a-fA-F0
 
 @router.post("/verify", response_model=TokenResponse, dependencies=[Depends(auth_rate_limiter)])
 async def verify_signature(req: VerifySignatureRequest, db: AsyncSession = Depends(get_db)):
-
     """
     Verifies EIP-4361 SIWE signature, checks single-use nonce, and resolves user session.
     Automatically generates onboarding profile if first-time visitor.
@@ -77,6 +78,61 @@ async def verify_signature(req: VerifySignatureRequest, db: AsyncSession = Depen
         token_type="bearer",
         user=UserResponse.model_validate(user)
     )
+
+@router.post("/kyc/verify", response_model=KYCVerifyResponse, dependencies=[Depends(auth_rate_limiter)])
+async def verify_kyc(req: KYCVerifyRequest, db: AsyncSession = Depends(get_db)):
+    """
+    Validates citizen KYC credentials via KYCAdapter.
+    Returns opaque identity_id and kyc_reference while ensuring Zero-PII invariant.
+    """
+    identity_id, kyc_reference = kyc_adapter.verify_citizen(
+        national_id=req.national_id_number,
+        full_name=req.full_name
+    )
+    return KYCVerifyResponse(
+        identity_id=identity_id,
+        kyc_reference=kyc_reference,
+        kyc_status="VERIFIED"
+    )
+
+@router.post("/wallet/recover", response_model=UserResponse)
+async def recover_wallet(
+    req: WalletRecoveryRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Recovers identity to a new wallet, revoking the previous one.
+    Enforces invariant: At most 1 active wallet per verified identity.
+    """
+    if current_user.identity_id != req.identity_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot recover wallet for a different identity"
+        )
+
+    # Revoke old wallet binding
+    stmt = select(WalletBinding).where(
+        WalletBinding.identity_id == req.identity_id,
+        WalletBinding.wallet_address == req.old_wallet.lower()
+    )
+    binding = (await db.execute(stmt)).scalar_one_or_none()
+    if binding:
+        binding.status = "REVOKED"
+        binding.revoked_at = datetime.now(timezone.utc)
+
+    # Add new wallet binding
+    new_binding = WalletBinding(
+        identity_id=req.identity_id,
+        wallet_address=req.new_wallet.lower(),
+        status="ACTIVE"
+    )
+    db.add(new_binding)
+    current_user.active_wallet = req.new_wallet.lower()
+    await db.commit()
+    await db.refresh(current_user)
+
+    return UserResponse.model_validate(current_user)
 
 @router.get("/me", response_model=UserResponse)
 async def get_current_profile(current_user: User = Depends(get_current_user)):
