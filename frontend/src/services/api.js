@@ -77,6 +77,18 @@ class ApiClient {
     });
   }
 
+  async demoLogin(walletAddress, role = null) {
+    const data = await this.request('/auth/demo-login', {
+      method: 'POST',
+      body: JSON.stringify({ wallet_address: walletAddress, role }),
+    });
+    if (data.access_token) {
+      this.setToken(data.access_token);
+    }
+    return data;
+  }
+
+
   // --- Land Application Endpoints ---
   async createDraftApplication(appData) {
     return this.request('/applications/draft', {

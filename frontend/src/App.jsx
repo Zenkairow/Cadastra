@@ -13,8 +13,9 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [syncStatus, setSyncStatus] = useState({ isSynced: true, blockNumber: 0 });
+  const [networkChainId, setNetworkChainId] = useState(11155111);
 
-  // Load existing session on mount
+  // Load existing session and track chain ID on mount
   useEffect(() => {
     const savedUser = localStorage.getItem('cadastra_user');
     if (savedUser) {
@@ -25,7 +26,23 @@ export default function App() {
       }
     }
 
-    // Monitor Indexer health
+    if (typeof window !== 'undefined' && window.ethereum) {
+      window.ethereum.request({ method: 'eth_chainId' })
+        .then((hex) => setNetworkChainId(parseInt(hex, 16)))
+        .catch(() => {});
+
+      const handleChainChanged = (hex) => {
+        setNetworkChainId(parseInt(hex, 16));
+      };
+      window.ethereum.on('chainChanged', handleChainChanged);
+      return () => {
+        window.ethereum.removeListener('chainChanged', handleChainChanged);
+      };
+    }
+  }, []);
+
+  // Monitor Indexer health
+  useEffect(() => {
     const checkSync = async () => {
       try {
         const statuses = await api.getSyncStatus();
@@ -34,7 +51,6 @@ export default function App() {
           setSyncStatus({ isSynced: true, blockNumber: maxBlock });
         }
       } catch (err) {
-        // Fallback
         setSyncStatus((prev) => ({ ...prev, isSynced: true }));
       }
     };
@@ -90,10 +106,18 @@ export default function App() {
       <Header
         activeTab={activeTab}
         setActiveTab={setActiveTab}
+        currentPortal={activeTab}
+        setCurrentPortal={setActiveTab}
         user={user}
+        currentUser={user}
+        walletAddress={user?.active_wallet}
         onOpenAuth={() => setAuthModalOpen(true)}
+        onConnectWallet={() => setAuthModalOpen(true)}
         onLogout={handleLogout}
+        onDisconnectWallet={handleLogout}
+        networkChainId={networkChainId}
         syncStatus={syncStatus}
+        indexerLag={syncStatus.isSynced ? 0 : 1}
       />
 
       <main style={{ flex: 1, padding: '2rem 1.5rem', maxWidth: '1280px', width: '100%', margin: '0 auto' }}>

@@ -15,22 +15,37 @@ import {
 export default function Header({ 
   currentPortal, 
   setCurrentPortal, 
+  activeTab,
+  setActiveTab,
   walletAddress, 
   currentUser, 
+  user,
   onConnectWallet, 
+  onOpenAuth,
   onDisconnectWallet, 
+  onLogout,
   networkChainId,
-  indexerLag = 0
+  indexerLag = 0,
+  syncStatus
 }) {
-  const isSepolia = networkChainId === 11155111;
-  const isLocal = networkChainId === 31337;
+  const portal = activeTab || currentPortal || 'marketplace';
+  const setPortal = setActiveTab || setCurrentPortal || (() => {});
+  const activeUser = user || currentUser;
+  const address = activeUser?.active_wallet || walletAddress;
+  const connectAction = onOpenAuth || onConnectWallet || (() => {});
+  const disconnectAction = onLogout || onDisconnectWallet || (() => {});
+
+  const chainId = networkChainId || 11155111;
+  const isSepolia = chainId === 11155111;
+  const isLocal = chainId === 31337;
+  const lag = syncStatus !== undefined ? (syncStatus.isSynced ? 0 : 1) : indexerLag;
 
   return (
     <header className="glass-panel" style={{ margin: '16px 24px', padding: '14px 24px', borderRadius: '16px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
         
         {/* Brand Logo & Tagline */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer' }} onClick={() => setCurrentPortal('marketplace')}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer' }} onClick={() => setPortal('marketplace')}>
           <div style={{
             width: '42px',
             height: '42px',
@@ -61,33 +76,33 @@ export default function Header({
         {/* Portal Navigation Tabs */}
         <nav style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(15, 23, 42, 0.5)', padding: '6px', borderRadius: '12px', border: '1px solid var(--border-subtle)' }}>
           <button 
-            className={`btn ${currentPortal === 'marketplace' ? 'btn-primary' : 'btn-outline'}`}
+            className={`btn ${portal === 'marketplace' ? 'btn-primary' : 'btn-outline'}`}
             style={{ padding: '8px 14px', fontSize: '0.85rem' }}
-            onClick={() => setCurrentPortal('marketplace')}
+            onClick={() => setPortal('marketplace')}
           >
             <Compass size={16} /> Explorer
           </button>
           
           <button 
-            className={`btn ${currentPortal === 'citizen' ? 'btn-primary' : 'btn-outline'}`}
+            className={`btn ${portal === 'citizen' ? 'btn-primary' : 'btn-outline'}`}
             style={{ padding: '8px 14px', fontSize: '0.85rem' }}
-            onClick={() => setCurrentPortal('citizen')}
+            onClick={() => setPortal('citizen')}
           >
             <FileText size={16} /> Landowner
           </button>
 
           <button 
-            className={`btn ${currentPortal === 'inspector' ? 'btn-primary' : 'btn-outline'}`}
+            className={`btn ${portal === 'inspector' ? 'btn-primary' : 'btn-outline'}`}
             style={{ padding: '8px 14px', fontSize: '0.85rem' }}
-            onClick={() => setCurrentPortal('inspector')}
+            onClick={() => setPortal('inspector')}
           >
             <UserCheck size={16} /> Inspector
           </button>
 
           <button 
-            className={`btn ${currentPortal === 'admin' ? 'btn-primary' : 'btn-outline'}`}
+            className={`btn ${portal === 'admin' ? 'btn-primary' : 'btn-outline'}`}
             style={{ padding: '8px 14px', fontSize: '0.85rem' }}
-            onClick={() => setCurrentPortal('admin')}
+            onClick={() => setPortal('admin')}
           >
             <Building2 size={16} /> Governance
           </button>
@@ -97,9 +112,9 @@ export default function Header({
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           
           {/* Indexer Sync Indicator */}
-          <div className="badge badge-network" title={`Indexer lag: ${indexerLag} blocks`} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'default' }}>
-            <div className="pulse-dot" style={{ backgroundColor: indexerLag === 0 ? 'var(--accent-emerald)' : 'var(--accent-amber)' }}></div>
-            <span>{indexerLag === 0 ? 'Synced' : `Lag: ${indexerLag} blk`}</span>
+          <div className="badge badge-network" title={`Indexer lag: ${lag} blocks`} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'default' }}>
+            <div className="pulse-dot" style={{ backgroundColor: lag === 0 ? 'var(--accent-emerald)' : 'var(--accent-amber)' }}></div>
+            <span>{lag === 0 ? 'Synced' : `Lag: ${lag} blk`}</span>
           </div>
 
           {/* Network Pill */}
@@ -109,11 +124,11 @@ export default function Header({
             border: `1px solid ${isSepolia ? 'rgba(99, 102, 241, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`
           }}>
             <Activity size={12} />
-            <span>{isSepolia ? 'Sepolia 11155111' : isLocal ? 'Hardhat 31337' : 'Unknown Chain'}</span>
+            <span>{isSepolia ? 'Sepolia 11155111' : isLocal ? 'Hardhat 31337' : `Chain ${chainId}`}</span>
           </div>
 
           {/* Wallet / Auth Action */}
-          {walletAddress ? (
+          {address ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <div style={{
                 background: 'rgba(255, 255, 255, 0.04)',
@@ -126,25 +141,25 @@ export default function Header({
               }}>
                 <ShieldCheck size={16} color="var(--accent-emerald)" />
                 <span className="mono" style={{ fontSize: '0.85rem', fontWeight: 600 }}>
-                  {walletAddress.substring(0, 6)}...{walletAddress.substring(walletAddress.length - 4)}
+                  {address.substring(0, 6)}...{address.substring(address.length - 4)}
                 </span>
-                {currentUser?.role && (
+                {activeUser?.role && (
                   <span className="badge badge-verified" style={{ fontSize: '0.65rem', padding: '2px 6px' }}>
-                    {currentUser.role}
+                    {activeUser.role}
                   </span>
                 )}
               </div>
               <button 
                 className="btn btn-outline" 
                 style={{ padding: '8px 10px' }} 
-                onClick={onDisconnectWallet}
+                onClick={disconnectAction}
                 title="Disconnect Wallet & Logout"
               >
                 <LogOut size={16} />
               </button>
             </div>
           ) : (
-            <button className="btn btn-primary" onClick={onConnectWallet}>
+            <button className="btn btn-primary" onClick={connectAction}>
               <Wallet size={16} /> Connect Wallet
             </button>
           )}

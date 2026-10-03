@@ -6,7 +6,7 @@ from datetime import datetime
 from backend.app.database import get_db
 from backend.app.schemas.schemas import (
     NonceResponse, VerifySignatureRequest, TokenResponse, UserResponse,
-    KYCVerifyRequest, KYCVerifyResponse, WalletRecoveryRequest
+    KYCVerifyRequest, KYCVerifyResponse, WalletRecoveryRequest, DemoLoginRequest
 )
 from backend.app.services.auth_service import auth_service
 from backend.app.services.kyc_adapter import kyc_adapter
@@ -67,6 +67,52 @@ async def verify_signature(req: VerifySignatureRequest, db: AsyncSession = Depen
         await db.refresh(user)
 
     # Issue JWT token
+    token = auth_service.create_access_token(
+        identity_id=user.identity_id,
+        wallet_address=user.active_wallet,
+        role=user.role
+    )
+
+    return TokenResponse(
+        access_token=token,
+        token_type="bearer",
+        user=UserResponse.model_validate(user)
+    )
+
+@router.post("/demo-login", response_model=TokenResponse)
+async def demo_login(req: DemoLoginRequest, db: AsyncSession = Depends(get_db)):
+    """
+    Direct login endpoint for test actors and one-click role switching.
+    Returns authentic JWT access token and user profile.
+    """
+    wallet = req.wallet_address.lower()
+    stmt = select(User).where(User.active_wallet == wallet)
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
+
+    if not user:
+        role = req.role or "CITIZEN"
+        mock_id, mock_kyc_ref = kyc_adapter.verify_citizen(
+            national_id=wallet[-6:],
+            full_name=f"USER_{wallet[-4:]}"
+        )
+        user = User(
+            identity_id=mock_id,
+            active_wallet=wallet,
+            role=role,
+            kyc_status="VERIFIED",
+            kyc_reference=mock_kyc_ref
+        )
+        db.add(user)
+        binding = WalletBinding(
+            identity_id=mock_id,
+            wallet_address=wallet,
+            status="ACTIVE"
+        )
+        db.add(binding)
+        await db.commit()
+        await db.refresh(user)
+
     token = auth_service.create_access_token(
         identity_id=user.identity_id,
         wallet_address=user.active_wallet,

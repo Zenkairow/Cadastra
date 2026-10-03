@@ -26,6 +26,11 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
     user: UserResponse
 
+class DemoLoginRequest(BaseModel):
+    wallet_address: str
+    role: Optional[str] = None
+
+
 # --- KYC Schemas ---
 class KYCVerifyRequest(BaseModel):
     national_id_number: str = Field(..., min_length=4)
