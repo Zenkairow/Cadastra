@@ -11,15 +11,17 @@ from backend.app.schemas.schemas import (
     DocumentItemResponse, ManifestResponse, PresignedDownloadResponse, DocumentVerificationResponse
 )
 from backend.app.api.dependencies import get_current_user
-from backend.app.services.document_security import validate_document_security
+from backend.app.services.document_security import validate_document_security, sanitize_filename
 from backend.app.services.storage_service import storage_service, compute_stream_sha256
 from backend.app.services.manifest_service import manifest_service
 from backend.app.services.tamper_service import tamper_service
 from backend.app.config import settings
 
+from backend.app.api.rate_limiter import upload_rate_limiter
+
 router = APIRouter(prefix="/documents", tags=["Documents"])
 
-@router.post("/upload", response_model=DocumentItemResponse)
+@router.post("/upload", response_model=DocumentItemResponse, dependencies=[Depends(upload_rate_limiter)])
 async def upload_document(
     application_id: str = Form(...),
     document_type: str = Form(...),
@@ -27,6 +29,7 @@ async def upload_document(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
+
     """
     Secure document upload pipeline:
     1. Authorization & ownership check.
@@ -94,9 +97,10 @@ async def upload_document(
         latest_prev.status = "REPLACED"
 
     # 5. Store file in object storage
-    clean_filename = file.filename.replace(" ", "_") if file.filename else "document"
+    clean_filename = sanitize_filename(file.filename)
     storage_key = f"applications/{application_id}/{document_type.upper()}_v{version}_{clean_filename}"
     storage_service.put_object(storage_key, file_bytes, content_type=actual_mime)
+
 
     # 6. Insert new Document record
     new_doc = Document(

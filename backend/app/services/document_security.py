@@ -54,3 +54,32 @@ def validate_document_security(header_bytes: bytes, claimed_mime: str, file_size
             raise ValueError(f"MIME type spoofing detected: claimed '{claimed_mime}', but magic bytes identify '{actual_mime}'")
 
     return actual_mime
+
+def sanitize_filename(filename: Optional[str]) -> str:
+    """
+    Sanitizes file names to prevent path traversal (OWASP Top 10),
+    directory escapes, null-byte injection, and control character execution.
+    """
+    import os
+    import re
+
+    if not filename:
+        return "unnamed_document"
+
+    # 1. Strip directory paths
+    base_name = os.path.basename(filename)
+
+    # 2. Remove null bytes and path traversal patterns
+    cleaned = re.sub(r'[\x00/\\?%*:|"<>]+', '', base_name)
+    cleaned = cleaned.replace("..", "").replace(" ", "_").strip()
+
+    # 3. Restrict length to 128 characters
+    if len(cleaned) > 128:
+        name_parts = cleaned.rsplit(".", 1)
+        if len(name_parts) == 2:
+            cleaned = name_parts[0][:120] + "." + name_parts[1]
+        else:
+            cleaned = cleaned[:128]
+
+    return cleaned if cleaned else "sanitized_document"
+

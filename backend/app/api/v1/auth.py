@@ -10,16 +10,19 @@ from backend.app.services.kyc_adapter import kyc_adapter
 from backend.app.models.models import User, WalletBinding
 from backend.app.api.dependencies import get_current_user
 
+from backend.app.api.rate_limiter import auth_rate_limiter
+
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
-@router.get("/nonce", response_model=NonceResponse)
+@router.get("/nonce", response_model=NonceResponse, dependencies=[Depends(auth_rate_limiter)])
 async def get_login_nonce(wallet_address: str = Query(..., pattern=r"^0x[a-fA-F0-9]{40}$")):
     """Issue a cryptographically random, single-use nonce for wallet challenge signature."""
     nonce, issued_at, expires_at = auth_service.generate_nonce(wallet_address)
     return NonceResponse(nonce=nonce, issued_at=issued_at, expires_at=expires_at)
 
-@router.post("/verify", response_model=TokenResponse)
+@router.post("/verify", response_model=TokenResponse, dependencies=[Depends(auth_rate_limiter)])
 async def verify_signature(req: VerifySignatureRequest, db: AsyncSession = Depends(get_db)):
+
     """
     Verifies EIP-4361 SIWE signature, checks single-use nonce, and resolves user session.
     Automatically generates onboarding profile if first-time visitor.
