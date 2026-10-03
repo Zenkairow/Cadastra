@@ -126,7 +126,7 @@ python -m pytest backend/tests/ -v
 - [x] **Phase 8:** Frontend & End-to-End Integration (Milestone M4)
 - [x] **Phase 9:** Security Hardening & Verification (Milestone M5)
 - [x] **Phase 10:** Performance Measurement & Research Experiments (RQ1–RQ6)
-- [ ] **Phase 11:** Release, Documentation & Research Paper (Milestone M6)
+- [x] **Phase 11:** Release, Documentation & Research Paper (Milestone M6)
 
 ---
 
@@ -134,8 +134,17 @@ python -m pytest backend/tests/ -v
 
 - Master Whitepaper: [`docs/technical_whitepaper.md`](docs/technical_whitepaper.md)
 - Chronological Engineering Log: [`docs/project_log.md`](docs/project_log.md)
+- Academic Research Paper Draft: [`docs/research_paper.md`](docs/research_paper.md)
+- Clean-Machine Setup Guide & Runbook: [`docs/setup_guide.md`](docs/setup_guide.md)
+- Three-Scenario Demonstration Script: [`docs/demonstration_script.md`](docs/demonstration_script.md)
+- Consolidated Quality Assurance & Test Report: [`docs/test_report.md`](docs/test_report.md)
 - Milestone M5 Empirical Research Results: [`docs/experiment_results.md`](docs/experiment_results.md)
 - Milestone M5 Security Report: [`docs/security_report.md`](docs/security_report.md)
+- Role Manuals:
+  - [Citizen & Landowner Manual](docs/manual_citizen.md)
+  - [Land Inspector & Senior Inspector Manual](docs/manual_inspector.md)
+  - [System Administrator & Registrar Manual](docs/manual_admin.md)
+- Project Retrospective & Lessons Learned: [`docs/retrospective.md`](docs/retrospective.md)
 - System Architecture Spec: [`docs/architecture.md`](docs/architecture.md)
 - Database Schema DDL: [`docs/database-schema.md`](docs/database-schema.md)
 - Security Threat Matrix: [`docs/security-model.md`](docs/security-model.md)

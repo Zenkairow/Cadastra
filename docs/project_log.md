@@ -417,3 +417,37 @@ Chronological record of technical decisions, architecture transitions, code chan
 - **Deliverables Produced:**
   - Authoritative Empirical Results Document: [`docs/experiment_results.md`](file:///d:/New_land_registry/docs/experiment_results.md).
 - **Phase Status:** Phase 10 complete. Milestone M5 evidence established and reproducible. Proceeding to Phase 11 (Release, Documentation & Research Paper).
+
+---
+
+### [2026-10-03 11:15:00 +05:30] — Phase 11: Release, Documentation & Research Paper [COMPLETED] (Milestone M6)
+- **Context:** Packaging the entire Cadastra monorepo for independent evaluation, clean-machine reproducibility, live demonstration walkthroughs, and academic publication following Section 16.8 of the Master Plan.
+- **Deliverables Authored & Verified:**
+  1. **Clean-Machine Reproducible Setup Guide & Runbook ([`docs/setup_guide.md`](setup_guide.md)):**
+     - Detailed prerequisites, environment variables, Docker Compose containerization for PostgreSQL 15 / PostGIS 3.3 and MinIO S3.
+     - Step-by-step instructions for smart contract compilation, local Hardhat node deployment, Sepolia testnet deployment, Alembic database migrations, background indexer daemon execution, and React 18 / Vite frontend startup.
+  2. **Role-Based User Manuals & Administrator Manual:**
+     - **Citizen & Landowner Manual ([`docs/manual_citizen.md`](manual_citizen.md)):** MetaMask wallet connection, EIP-4361 SIWE signature workflow, Zero-PII KYC binding, cadastral application submission, interactive polygon boundary capture, ellipsoidal area calculation, client-side chunked streaming SHA-256 document hashing, escrow purchase initiation, exact payment deposit, and pull-payment withdrawal.
+     - **Land Inspector & Senior Inspector Manual ([`docs/manual_inspector.md`](manual_inspector.md)):** Hierarchical inspector privileges (Level 1 vs Level 2 Senior Inspector), jurisdiction-scoped application review queue, PostGIS OGC validity and Layer 2 spatial overlap inspection (differentiating shared borders from illegal interior encroachments), real-time document manifest tamper audit, on-chain minting on Sepolia, and senior inspector high-value transfer authorization ($\ge 5.0$ ETH).
+     - **System Administrator & Registrar Manual ([`docs/manual_admin.md`](manual_admin.md)):** Administrator and regional registrar privilege separation, opaque identity binding and wallet recovery/re-keying, inspector appointments, level promotions, territorial assignments, emergency revocation, indexer confirmation-depth monitoring, self-healing reconciliation triggers, and OpenZeppelin `Pausable` emergency circuit breakers (`pause()` / `unpause()`).
+  3. **Three-Scenario Live Demonstration Walkthrough Script ([`docs/demonstration_script.md`](demonstration_script.md)):**
+     - Authoritative, step-by-step guide for viva reviewers and live evaluators.
+     - **Scenario 1:** Legitimate Land Application, Geospatial Boundary Capture, Client Manifest Hashing, Jurisdictional Inspector Review, Sepolia On-Chain Minting, and Sub-Millisecond Event Sync.
+     - **Scenario 2:** Dual Fraud Defense: Layer 2 PostGIS Spatial Overlap / Encroachment Rejection (HTTP 409 Conflict) and Evidentiary Document Single-Byte Tamper Detection Alert.
+     - **Scenario 3:** Escrow Purchase State Machine: Exact-Payment Custody, Senior Inspector High-Value Dual-Approval ($\ge 5.0$ ETH), Atomic Ownership Transfer, and Reentrancy-Safe Pull-Payment Withdrawal.
+  4. **Consolidated Final Test & Quality Assurance Report ([`docs/test_report.md`](test_report.md)):**
+     - Consolidated summary of all 98 monorepo tests (68 Hardhat + 30 Pytest, 100% green).
+     - Full Access Control Matrix (`ACM-01`..`08`), negative revert suite (`NEG-01`..`05`), emergency pausable (`PAUSE-01`..`03`), pull-payment balance invariant (`INV-01`), and reentrancy attack immunity (`REENT-01`).
+     - Compilation of all 7 empirical research benchmarks (RQ1–RQ6 + Gas Profiling).
+  5. **Academic Research Paper Draft ([`docs/research_paper.md`](research_paper.md)):**
+     - Complete 16-section publication-ready academic manuscript structured in strict compliance with Section 16.8 of the Master Plan.
+     - Formulations of the 5 system invariants ($\text{INV}_{\text{PII}}$, $\text{INV}_{\text{Jurisdiction}}$, $\text{INV}_{\text{Spatial}}$, $\text{INV}_{\text{Doc}}$, $\text{INV}_{\text{Escrow}}$).
+     - Complete empirical data tables from Phase 10 (Gas Profiler, RQ1 Authorization Matrix, RQ2 10k Parcel Spatial Benchmark, RQ3 Escrow Invariant, RQ4 Event Sync & Self-Healing Latency, RQ5 400 Tamper Attacks, RQ6 725x Read Scaling).
+     - Security threat evaluation, formal citations, and future work roadmap.
+  6. **Project Retrospective & Lessons Learned ([`docs/retrospective.md`](retrospective.md)):**
+     - Comprehensive review of engineering successes, architectural pivots (push-to-pull payment migration, PostGIS spatial offload, Sepolia testnet standardization), lessons learned, and deferred production roadmap.
+  7. **Release Tagging & Final Definition of Done:**
+     - Milestone M6 achieved.
+     - Monorepo tagged `v1.0.0-rc1`.
+- **Phase Status:** Phase 11 complete. Milestone M6 (Full Project Completion & Release) achieved. All master plan objectives met with empirical evidence.
+
