@@ -3,10 +3,10 @@
     "category": "Deployment",
     "operation": "IdentityRegistry.deploy()",
     "sampleSize": 1,
-    "minGas": 1261760,
-    "medianGas": 1261760,
-    "maxGas": 1261760,
-    "meanGas": 1261760
+    "minGas": 1261772,
+    "medianGas": 1261772,
+    "maxGas": 1261772,
+    "meanGas": 1261772
   },
   {
     "category": "Deployment",
@@ -48,10 +48,10 @@
     "category": "Identity",
     "operation": "verifyAndBindIdentity()",
     "sampleSize": 5,
-    "minGas": 162416,
+    "minGas": 162428,
     "medianGas": 162428,
     "maxGas": 162428,
-    "meanGas": 162423
+    "meanGas": 162428
   },
   {
     "category": "Identity",
@@ -60,16 +60,16 @@
     "minGas": 84878,
     "medianGas": 84890,
     "maxGas": 84890,
-    "meanGas": 84885
+    "meanGas": 84888
   },
   {
     "category": "Governance",
     "operation": "addInspector(Level 1 - Registrar)",
     "sampleSize": 5,
-    "minGas": 201667,
+    "minGas": 201679,
     "medianGas": 201679,
     "maxGas": 218779,
-    "meanGas": 205097
+    "meanGas": 205099
   },
   {
     "category": "Governance",
@@ -84,19 +84,19 @@
     "category": "Governance",
     "operation": "addInspector(Level 3 - Field)",
     "sampleSize": 5,
-    "minGas": 127204,
+    "minGas": 127216,
     "medianGas": 127216,
     "maxGas": 127216,
-    "meanGas": 127214
+    "meanGas": 127216
   },
   {
     "category": "Governance",
     "operation": "revokeInspector()",
     "sampleSize": 5,
-    "minGas": 30894,
+    "minGas": 30906,
     "medianGas": 30906,
     "maxGas": 30906,
-    "meanGas": 30904
+    "meanGas": 30906
   },
   {
     "category": "LandRegistry",

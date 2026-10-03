@@ -1,15 +1,15 @@
 Category,Operation,Sample_Size,Min_Gas,Median_Gas,Max_Gas,Mean_Gas
-"Deployment","IdentityRegistry.deploy()",1,1261760,1261760,1261760,1261760
+"Deployment","IdentityRegistry.deploy()",1,1261772,1261772,1261772,1261772
 "Deployment","InspectorRegistry.deploy()",1,1377484,1377484,1377484,1377484
 "Deployment","LandRegistry.deploy()",1,1875632,1875632,1875632,1875632
 "Deployment","TransferEscrow.deploy()",1,2823240,2823240,2823240,2823240
 "Configuration","LandRegistry.setEscrowContract()",1,47931,47931,47931,47931
-"Identity","verifyAndBindIdentity()",5,162416,162428,162428,162423
-"Identity","recoverWallet()",5,84878,84890,84890,84885
-"Governance","addInspector(Level 1 - Registrar)",5,201667,201679,218779,205097
+"Identity","verifyAndBindIdentity()",5,162428,162428,162428,162428
+"Identity","recoverWallet()",5,84878,84890,84890,84888
+"Governance","addInspector(Level 1 - Registrar)",5,201679,201679,218779,205099
 "Governance","addInspector(Level 2 - Senior)",5,127216,127216,127216,127216
-"Governance","addInspector(Level 3 - Field)",5,127204,127216,127216,127214
-"Governance","revokeInspector()",5,30894,30906,30906,30904
+"Governance","addInspector(Level 3 - Field)",5,127216,127216,127216,127216
+"Governance","revokeInspector()",5,30906,30906,30906,30906
 "LandRegistry","registerLand()",5,268322,268334,268334,268329
 "LandRegistry","verifyLand()",5,134754,134754,134754,134754
 "LandRegistry","rejectLand()",1,69954,69954,69954,69954

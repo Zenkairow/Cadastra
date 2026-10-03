@@ -1,11 +1,11 @@
 Metric,Value
 eventsProcessed,1000
-totalIngestionDurationSec,0.576
-throughputEventsPerSec,1735.67
-medianLatencyMs,0.526
-p95LatencyMs,0.745
+totalIngestionDurationSec,0.596
+throughputEventsPerSec,1677.37
+medianLatencyMs,0.516
+p95LatencyMs,0.775
 idempotencyDuplicateInterceptionRate,100.0%
 databaseTamperDetected,True
 reconciliationRepairStatus,REPAIRED
-reconciliationDurationMs,6.106
+reconciliationDurationMs,14.818
 groundTruthRestored,True

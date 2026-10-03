@@ -88,9 +88,8 @@ def test_oversized_file_rejection():
         )
 
 @pytest.mark.asyncio
-async def test_sql_injection_resistance(db_session):
+async def test_sql_injection_resistance(client, db_session):
     """Verify that malicious SQL payloads in query parameters do not compromise database."""
-    transport = ASGITransport(app=app)
     malicious_inputs = [
         "' OR '1'='1",
         "'; DROP TABLE lands; --",
@@ -98,14 +97,13 @@ async def test_sql_injection_resistance(db_session):
         "admin'--",
     ]
 
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        for payload in malicious_inputs:
-            # Test in lands filter
-            res = await client.get(f"/api/v1/lands?status_filter={payload}")
-            # Parameterized query handles payload safely as literal string
-            assert res.status_code == 200
-            data = res.json()
-            assert data["total"] == 0 # No lands with status == payload
+    for payload in malicious_inputs:
+        # Test in lands filter
+        res = await client.get(f"/api/v1/lands?status_filter={payload}")
+        # Parameterized query handles payload safely as literal string
+        assert res.status_code == 200
+        data = res.json()
+        assert data["total"] == 0 # No lands with status == payload
 
 @pytest.mark.asyncio
 async def test_zero_pii_storage_invariant(db_session):
