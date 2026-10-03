@@ -125,7 +125,7 @@ python -m pytest backend/tests/ -v
 - [x] **Phase 7:** Geospatial Validation & Maps (PostGIS Spatial Overlap & Canonical Geometry)
 - [x] **Phase 8:** Frontend & End-to-End Integration (Milestone M4)
 - [x] **Phase 9:** Security Hardening & Verification (Milestone M5)
-- [ ] **Phase 10:** Performance Measurement & Research Experiments (RQ1–RQ6)
+- [x] **Phase 10:** Performance Measurement & Research Experiments (RQ1–RQ6)
 - [ ] **Phase 11:** Release, Documentation & Research Paper (Milestone M6)
 
 ---
@@ -134,6 +134,7 @@ python -m pytest backend/tests/ -v
 
 - Master Whitepaper: [`docs/technical_whitepaper.md`](docs/technical_whitepaper.md)
 - Chronological Engineering Log: [`docs/project_log.md`](docs/project_log.md)
+- Milestone M5 Empirical Research Results: [`docs/experiment_results.md`](docs/experiment_results.md)
 - Milestone M5 Security Report: [`docs/security_report.md`](docs/security_report.md)
 - System Architecture Spec: [`docs/architecture.md`](docs/architecture.md)
 - Database Schema DDL: [`docs/database-schema.md`](docs/database-schema.md)

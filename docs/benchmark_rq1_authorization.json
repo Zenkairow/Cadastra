@@ -1,0 +1,68 @@
+[
+  {
+    "scenarioId": "SCEN-01",
+    "name": "Pune Inspector -> Pune Land Registration",
+    "description": "Field inspector operating within assigned jurisdiction",
+    "actorType": "Field Inspector (Same Region)",
+    "trials": 20,
+    "expected": "ALLOWED",
+    "observedAllowed": 20,
+    "observedRejections": 0,
+    "enforcementAccuracy": "100.0%"
+  },
+  {
+    "scenarioId": "SCEN-02",
+    "name": "Pune Inspector -> Nashik Land Registration (Cross-Jurisdiction)",
+    "description": "Field inspector attempting action outside assigned jurisdiction",
+    "actorType": "Field Inspector (Cross-Region)",
+    "trials": 20,
+    "expected": "REJECTED",
+    "observedAllowed": 0,
+    "observedRejections": 20,
+    "enforcementAccuracy": "100.0%"
+  },
+  {
+    "scenarioId": "SCEN-03",
+    "name": "Pune Field Inspector -> Senior Inspector Task (Level 2 Required)",
+    "description": "Field inspector attempting approval requiring Level 2 authorization",
+    "actorType": "Field Inspector (Under-Leveled)",
+    "trials": 20,
+    "expected": "REJECTED",
+    "observedAllowed": 0,
+    "observedRejections": 20,
+    "enforcementAccuracy": "100.0%"
+  },
+  {
+    "scenarioId": "SCEN-04",
+    "name": "Revoked Inspector -> Any Land Action",
+    "description": "Decommissioned inspector wallet attempting state changes",
+    "actorType": "Revoked Inspector",
+    "trials": 20,
+    "expected": "REJECTED",
+    "observedAllowed": 0,
+    "observedRejections": 20,
+    "enforcementAccuracy": "100.0%"
+  },
+  {
+    "scenarioId": "SCEN-05",
+    "name": "Expired Inspector -> Any Land Action",
+    "description": "Inspector with lapsed appointment term attempting operations",
+    "actorType": "Expired Inspector",
+    "trials": 20,
+    "expected": "REJECTED",
+    "observedAllowed": 0,
+    "observedRejections": 20,
+    "enforcementAccuracy": "100.0%"
+  },
+  {
+    "scenarioId": "SCEN-06",
+    "name": "Non-Inspector Citizen -> Any Land Action",
+    "description": "Random user attempting administrative / inspector execution",
+    "actorType": "Unregistered Citizen",
+    "trials": 20,
+    "expected": "REJECTED",
+    "observedAllowed": 0,
+    "observedRejections": 20,
+    "enforcementAccuracy": "100.0%"
+  }
+]

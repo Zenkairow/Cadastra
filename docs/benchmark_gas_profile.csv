@@ -1,0 +1,26 @@
+Category,Operation,Sample_Size,Min_Gas,Median_Gas,Max_Gas,Mean_Gas
+"Deployment","IdentityRegistry.deploy()",1,1261760,1261760,1261760,1261760
+"Deployment","InspectorRegistry.deploy()",1,1377484,1377484,1377484,1377484
+"Deployment","LandRegistry.deploy()",1,1875632,1875632,1875632,1875632
+"Deployment","TransferEscrow.deploy()",1,2823240,2823240,2823240,2823240
+"Configuration","LandRegistry.setEscrowContract()",1,47931,47931,47931,47931
+"Identity","verifyAndBindIdentity()",5,162416,162428,162428,162423
+"Identity","recoverWallet()",5,84878,84890,84890,84885
+"Governance","addInspector(Level 1 - Registrar)",5,201667,201679,218779,205097
+"Governance","addInspector(Level 2 - Senior)",5,127216,127216,127216,127216
+"Governance","addInspector(Level 3 - Field)",5,127204,127216,127216,127214
+"Governance","revokeInspector()",5,30894,30906,30906,30904
+"LandRegistry","registerLand()",5,268322,268334,268334,268329
+"LandRegistry","verifyLand()",5,134754,134754,134754,134754
+"LandRegistry","rejectLand()",1,69954,69954,69954,69954
+"TransferEscrow","requestTransfer()",1,261629,261629,261629,261629
+"TransferEscrow","fundEscrow()",1,93402,93402,93402,93402
+"TransferEscrow","reviewTransfer()",1,76288,76288,76288,76288
+"TransferEscrow","approveTransfer() [Standard < 5 ETH]",1,107184,107184,107184,107184
+"TransferEscrow","approveTransfer() [Senior >= 5 ETH]",1,107427,107427,107427,107427
+"TransferEscrow","settleTransfer()",1,125116,125116,125116,125116
+"TransferEscrow","cancelRequest() [Unfunded Cancel]",1,83467,83467,83467,83467
+"TransferEscrow","refundExpiredRequest()",1,93653,93653,93653,93653
+"TransferEscrow","withdrawFunds() [Pull-Payment]",1,32742,32742,32742,32742
+"CircuitBreaker","pause()",1,29988,29988,29988,29988
+"CircuitBreaker","unpause()",1,29900,29900,29900,29900

@@ -1,0 +1,5 @@
+Profile_ID,Name,Description,Documents_Tested,Tamper_Detected,Detection_Rate
+PROFILE_A,1-Byte Flip (Single Character Corruption),Flipping exactly 1 bit/byte inside the document content,100,100,100.0%
+PROFILE_B,Page Truncation (Missing Tail / Partial File),Truncating the trailing 15% of bytes simulating missing page,100,100,100.0%
+PROFILE_C,Metadata Modification,Altering document creation date / author metadata only,100,100,100.0%
+PROFILE_D,File Replacement (Complete Substitution),Replacing genuine document with a forged substitute payload,100,100,100.0%

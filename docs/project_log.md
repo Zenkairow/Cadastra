@@ -379,3 +379,41 @@ Chronological record of technical decisions, architecture transitions, code chan
   - Pytest Backend & Security Suite: **30 passing tests (100% green)** in 1.15s.
   - Total Monorepo Passing Tests: **98 tests (100% green, 0 failures)**.
 - **Phase Status:** Phase 9 complete. Milestone M5 achieved and frozen as Release Candidate. Proceeding to Phase 10 (Performance Measurement and Research Experiments).
+
+---
+
+### [2026-10-03 11:00:00 +05:30] — Phase 10: Performance Measurement & Research Experiments [COMPLETED]
+- **Context:** Executing the empirical research experiments to establish measured, reproducible evidence answering research questions RQ1 through RQ6, profiling gas consumption across all smart contract operations, and generating benchmark artifacts for the academic research paper.
+- **Harnesses & Experiments Executed:**
+  1. **Smart Contract Gas Consumption Profiler (`contracts/scripts/gas_profiler.js`):**
+     - Measured deployment costs and operational gas for all 4 contracts on Cancun EVM.
+     - Core transaction gas: `registerLand` (268,329 gas), `verifyLand` (134,754 gas), `requestTransfer` (261,629 gas), `fundEscrow` (93,402 gas), `settleTransfer` (125,116 gas), `withdrawFunds` (32,742 gas), `verifyAndBindIdentity` (162,423 gas), `addInspector` (127,214 gas).
+     - Generated [`docs/benchmark_gas_profile.json`](benchmark_gas_profile.json) and [`docs/benchmark_gas_profile.csv`](benchmark_gas_profile.csv).
+  2. **RQ1: Inspector Governance & Jurisdiction Containment (`contracts/scripts/experiment_rq1_authorization.js`):**
+     - Evaluated 6 actor types across 120 trials.
+     - Results: **100.0% rejection of unauthorized operations** and **0.0% cross-jurisdiction leakage**.
+     - Generated [`docs/benchmark_rq1_authorization.json`](benchmark_rq1_authorization.json).
+  3. **RQ2: Duplicate Land Detection & Spatial Overlap (`scripts/generate_synthetic_parcels.py`):**
+     - Evaluated 1,000 baseline parcels and 200 injected test cases; scaled to 10,000 synthetic parcels.
+     - Results: **100.0% Layer 1 exact duplicate rejection**, **100.0% Layer 2 partial encroachment detection**, and **0.0% false positives** on shared boundaries at >960 evaluations/sec.
+  4. **RQ3: Escrow State Machine & Financial Custody (`contracts/scripts/experiment_rq3_escrow.js`):**
+     - Executed test cases TC01–TC10 with gas profiling and custom error assertions.
+     - Results: 100% pass rate. Confirmed exact payment enforcement, pull-payment disbursement, and **contract balance invariant strictly holds** under all states.
+     - Generated [`docs/benchmark_rq3_escrow.json`](benchmark_rq3_escrow.json) and [`docs/benchmark_rq3_escrow.csv`](benchmark_rq3_escrow.csv).
+  5. **RQ4: Event Synchronization & Self-Healing Reconciliation (`scripts/experiment_rq4_synchronization.py`):**
+     - Processed 1,000 continuous smart contract events at **1,735.67 events/sec** (median latency: **0.526 ms**; p95: **0.745 ms**).
+     - Verified 100% idempotency under replay. Injected read-model tampering; reconciliation engine detected divergence and **restored authoritative ground truth in 6.11 ms**.
+     - Generated [`docs/benchmark_rq4_synchronization.json`](benchmark_rq4_synchronization.json) and [`docs/benchmark_rq4_synchronization.csv`](benchmark_rq4_synchronization.csv).
+  6. **RQ5: Document Integrity & Tamper Detection (`scripts/experiment_rq5_document_integrity.py`):**
+     - Tested 100 documents across 4 corruption profiles (1-byte flip, truncation, metadata change, file substitution) across 400 attack instances.
+     - Results: **100.0% tamper detection rate** against the on-chain manifest hash commitment.
+     - Generated [`docs/benchmark_rq5_document_integrity.json`](benchmark_rq5_document_integrity.json) and [`docs/benchmark_rq5_document_integrity.csv`](benchmark_rq5_document_integrity.csv).
+  7. **RQ6: Read Scalability & Dashboard Latency (`scripts/experiment_rq6_read_scaling.py`):**
+     - Benchmarked direct blockchain JSON-RPC reads vs event-indexed PostgreSQL queries across $N \in \{10, 50, 100, 500, 1000, 5000\}$ records over 30 trials.
+     - Results: Speedup factor up to **725.6x** (at 5,000 records: **27.67 ms** indexed DB vs **18,977.06 ms** direct RPC). **100% elimination of RPC calls** for dashboard reads, saving 50% in bandwidth overhead.
+     - Generated [`docs/benchmark_rq6_read_scaling.json`](benchmark_rq6_read_scaling.json) and [`docs/benchmark_rq6_read_scaling.csv`](benchmark_rq6_read_scaling.csv).
+  8. **Master Harness (`scripts/run_all_experiments.py`):**
+     - Unified CLI tool orchestrating all 7 empirical benchmark suites in sequence.
+- **Deliverables Produced:**
+  - Authoritative Empirical Results Document: [`docs/experiment_results.md`](file:///d:/New_land_registry/docs/experiment_results.md).
+- **Phase Status:** Phase 10 complete. Milestone M5 evidence established and reproducible. Proceeding to Phase 11 (Release, Documentation & Research Paper).

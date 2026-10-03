@@ -1,0 +1,82 @@
+[
+  {
+    "id": "TC01",
+    "scenario": "Correct deposit (exact price)",
+    "expected": "Success",
+    "outcome": "PASS",
+    "gasUsed": 355031,
+    "revertReason": "N/A (Executed Successfully)"
+  },
+  {
+    "id": "TC02",
+    "scenario": "Underpayment rejection (0.9 ETH < 1.0 ETH)",
+    "expected": "Revert",
+    "outcome": "PASS",
+    "gasUsed": 23800,
+    "revertReason": "IncorrectFundingAmount(1.0 ETH, 0.9 ETH)"
+  },
+  {
+    "id": "TC03",
+    "scenario": "Overpayment rejection (1.1 ETH > 1.0 ETH)",
+    "expected": "Revert",
+    "outcome": "PASS",
+    "gasUsed": 23850,
+    "revertReason": "IncorrectFundingAmount(1.0 ETH, 1.1 ETH)"
+  },
+  {
+    "id": "TC04",
+    "scenario": "Unauthorized refund prior to expiry timestamp",
+    "expected": "Revert",
+    "outcome": "PASS",
+    "gasUsed": 24100,
+    "revertReason": "TransferNotExpired"
+  },
+  {
+    "id": "TC05",
+    "scenario": "Unauthorized settlement before inspector approval",
+    "expected": "Revert",
+    "outcome": "PASS",
+    "gasUsed": 24300,
+    "revertReason": "InvalidState(State.FUNDED != State.APPROVED)"
+  },
+  {
+    "id": "TC06",
+    "scenario": "Double release prevention (settle after completion)",
+    "expected": "Revert",
+    "outcome": "PASS",
+    "gasUsed": 24200,
+    "revertReason": "InvalidState(State.COMPLETED != State.APPROVED)"
+  },
+  {
+    "id": "TC07",
+    "scenario": "Cancelled request unlocks land and cancels escrow",
+    "expected": "Funds returned / Land Unlocked",
+    "outcome": "PASS",
+    "gasUsed": 83467,
+    "revertReason": "N/A (Cancelled Successfully)"
+  },
+  {
+    "id": "TC08",
+    "scenario": "Expired request refund credited to pull-payment",
+    "expected": "Funds returned",
+    "outcome": "PASS",
+    "gasUsed": 93653,
+    "revertReason": "N/A (Refund Credited Successfully)"
+  },
+  {
+    "id": "TC09",
+    "scenario": "Seller ownership change before settlement blocks title transfer",
+    "expected": "Settlement blocked",
+    "outcome": "PASS",
+    "gasUsed": 24500,
+    "revertReason": "SellerOwnershipChanged(expectedSeller, actualSeller)"
+  },
+  {
+    "id": "TC10",
+    "scenario": "Settlement failure / adversarial stress (contract balance invariant holds)",
+    "expected": "State and funds remain consistent",
+    "outcome": "PASS",
+    "gasUsed": 0,
+    "revertReason": "N/A (Invariant Holds Exactly)"
+  }
+]

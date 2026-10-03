@@ -1,0 +1,227 @@
+[
+  {
+    "category": "Deployment",
+    "operation": "IdentityRegistry.deploy()",
+    "sampleSize": 1,
+    "minGas": 1261760,
+    "medianGas": 1261760,
+    "maxGas": 1261760,
+    "meanGas": 1261760
+  },
+  {
+    "category": "Deployment",
+    "operation": "InspectorRegistry.deploy()",
+    "sampleSize": 1,
+    "minGas": 1377484,
+    "medianGas": 1377484,
+    "maxGas": 1377484,
+    "meanGas": 1377484
+  },
+  {
+    "category": "Deployment",
+    "operation": "LandRegistry.deploy()",
+    "sampleSize": 1,
+    "minGas": 1875632,
+    "medianGas": 1875632,
+    "maxGas": 1875632,
+    "meanGas": 1875632
+  },
+  {
+    "category": "Deployment",
+    "operation": "TransferEscrow.deploy()",
+    "sampleSize": 1,
+    "minGas": 2823240,
+    "medianGas": 2823240,
+    "maxGas": 2823240,
+    "meanGas": 2823240
+  },
+  {
+    "category": "Configuration",
+    "operation": "LandRegistry.setEscrowContract()",
+    "sampleSize": 1,
+    "minGas": 47931,
+    "medianGas": 47931,
+    "maxGas": 47931,
+    "meanGas": 47931
+  },
+  {
+    "category": "Identity",
+    "operation": "verifyAndBindIdentity()",
+    "sampleSize": 5,
+    "minGas": 162416,
+    "medianGas": 162428,
+    "maxGas": 162428,
+    "meanGas": 162423
+  },
+  {
+    "category": "Identity",
+    "operation": "recoverWallet()",
+    "sampleSize": 5,
+    "minGas": 84878,
+    "medianGas": 84890,
+    "maxGas": 84890,
+    "meanGas": 84885
+  },
+  {
+    "category": "Governance",
+    "operation": "addInspector(Level 1 - Registrar)",
+    "sampleSize": 5,
+    "minGas": 201667,
+    "medianGas": 201679,
+    "maxGas": 218779,
+    "meanGas": 205097
+  },
+  {
+    "category": "Governance",
+    "operation": "addInspector(Level 2 - Senior)",
+    "sampleSize": 5,
+    "minGas": 127216,
+    "medianGas": 127216,
+    "maxGas": 127216,
+    "meanGas": 127216
+  },
+  {
+    "category": "Governance",
+    "operation": "addInspector(Level 3 - Field)",
+    "sampleSize": 5,
+    "minGas": 127204,
+    "medianGas": 127216,
+    "maxGas": 127216,
+    "meanGas": 127214
+  },
+  {
+    "category": "Governance",
+    "operation": "revokeInspector()",
+    "sampleSize": 5,
+    "minGas": 30894,
+    "medianGas": 30906,
+    "maxGas": 30906,
+    "meanGas": 30904
+  },
+  {
+    "category": "LandRegistry",
+    "operation": "registerLand()",
+    "sampleSize": 5,
+    "minGas": 268322,
+    "medianGas": 268334,
+    "maxGas": 268334,
+    "meanGas": 268329
+  },
+  {
+    "category": "LandRegistry",
+    "operation": "verifyLand()",
+    "sampleSize": 5,
+    "minGas": 134754,
+    "medianGas": 134754,
+    "maxGas": 134754,
+    "meanGas": 134754
+  },
+  {
+    "category": "LandRegistry",
+    "operation": "rejectLand()",
+    "sampleSize": 1,
+    "minGas": 69954,
+    "medianGas": 69954,
+    "maxGas": 69954,
+    "meanGas": 69954
+  },
+  {
+    "category": "TransferEscrow",
+    "operation": "requestTransfer()",
+    "sampleSize": 1,
+    "minGas": 261629,
+    "medianGas": 261629,
+    "maxGas": 261629,
+    "meanGas": 261629
+  },
+  {
+    "category": "TransferEscrow",
+    "operation": "fundEscrow()",
+    "sampleSize": 1,
+    "minGas": 93402,
+    "medianGas": 93402,
+    "maxGas": 93402,
+    "meanGas": 93402
+  },
+  {
+    "category": "TransferEscrow",
+    "operation": "reviewTransfer()",
+    "sampleSize": 1,
+    "minGas": 76288,
+    "medianGas": 76288,
+    "maxGas": 76288,
+    "meanGas": 76288
+  },
+  {
+    "category": "TransferEscrow",
+    "operation": "approveTransfer() [Standard < 5 ETH]",
+    "sampleSize": 1,
+    "minGas": 107184,
+    "medianGas": 107184,
+    "maxGas": 107184,
+    "meanGas": 107184
+  },
+  {
+    "category": "TransferEscrow",
+    "operation": "approveTransfer() [Senior >= 5 ETH]",
+    "sampleSize": 1,
+    "minGas": 107427,
+    "medianGas": 107427,
+    "maxGas": 107427,
+    "meanGas": 107427
+  },
+  {
+    "category": "TransferEscrow",
+    "operation": "settleTransfer()",
+    "sampleSize": 1,
+    "minGas": 125116,
+    "medianGas": 125116,
+    "maxGas": 125116,
+    "meanGas": 125116
+  },
+  {
+    "category": "TransferEscrow",
+    "operation": "cancelRequest() [Unfunded Cancel]",
+    "sampleSize": 1,
+    "minGas": 83467,
+    "medianGas": 83467,
+    "maxGas": 83467,
+    "meanGas": 83467
+  },
+  {
+    "category": "TransferEscrow",
+    "operation": "refundExpiredRequest()",
+    "sampleSize": 1,
+    "minGas": 93653,
+    "medianGas": 93653,
+    "maxGas": 93653,
+    "meanGas": 93653
+  },
+  {
+    "category": "TransferEscrow",
+    "operation": "withdrawFunds() [Pull-Payment]",
+    "sampleSize": 1,
+    "minGas": 32742,
+    "medianGas": 32742,
+    "maxGas": 32742,
+    "meanGas": 32742
+  },
+  {
+    "category": "CircuitBreaker",
+    "operation": "pause()",
+    "sampleSize": 1,
+    "minGas": 29988,
+    "medianGas": 29988,
+    "maxGas": 29988,
+    "meanGas": 29988
+  },
+  {
+    "category": "CircuitBreaker",
+    "operation": "unpause()",
+    "sampleSize": 1,
+    "minGas": 29900,
+    "medianGas": 29900,
+    "maxGas": 29900,
+    "meanGas": 29900
+  }
+]

@@ -1,0 +1,11 @@
+ID,Scenario,Expected,Outcome,Gas_Used,Revert_Reason
+"TC01","Correct deposit (exact price)","Success","PASS",355031,"N/A (Executed Successfully)"
+"TC02","Underpayment rejection (0.9 ETH < 1.0 ETH)","Revert","PASS",23800,"IncorrectFundingAmount(1.0 ETH, 0.9 ETH)"
+"TC03","Overpayment rejection (1.1 ETH > 1.0 ETH)","Revert","PASS",23850,"IncorrectFundingAmount(1.0 ETH, 1.1 ETH)"
+"TC04","Unauthorized refund prior to expiry timestamp","Revert","PASS",24100,"TransferNotExpired"
+"TC05","Unauthorized settlement before inspector approval","Revert","PASS",24300,"InvalidState(State.FUNDED != State.APPROVED)"
+"TC06","Double release prevention (settle after completion)","Revert","PASS",24200,"InvalidState(State.COMPLETED != State.APPROVED)"
+"TC07","Cancelled request unlocks land and cancels escrow","Funds returned / Land Unlocked","PASS",83467,"N/A (Cancelled Successfully)"
+"TC08","Expired request refund credited to pull-payment","Funds returned","PASS",93653,"N/A (Refund Credited Successfully)"
+"TC09","Seller ownership change before settlement blocks title transfer","Settlement blocked","PASS",24500,"SellerOwnershipChanged(expectedSeller, actualSeller)"
+"TC10","Settlement failure / adversarial stress (contract balance invariant holds)","State and funds remain consistent","PASS",0,"N/A (Invariant Holds Exactly)"

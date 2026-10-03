@@ -1,0 +1,38 @@
+[
+  {
+    "profileId": "PROFILE_A",
+    "name": "1-Byte Flip (Single Character Corruption)",
+    "description": "Flipping exactly 1 bit/byte inside the document content",
+    "documentsTested": 100,
+    "tamperDetected": 100,
+    "tamperUndetected": 0,
+    "detectionRate": "100.0%"
+  },
+  {
+    "profileId": "PROFILE_B",
+    "name": "Page Truncation (Missing Tail / Partial File)",
+    "description": "Truncating the trailing 15% of bytes simulating missing page",
+    "documentsTested": 100,
+    "tamperDetected": 100,
+    "tamperUndetected": 0,
+    "detectionRate": "100.0%"
+  },
+  {
+    "profileId": "PROFILE_C",
+    "name": "Metadata Modification",
+    "description": "Altering document creation date / author metadata only",
+    "documentsTested": 100,
+    "tamperDetected": 100,
+    "tamperUndetected": 0,
+    "detectionRate": "100.0%"
+  },
+  {
+    "profileId": "PROFILE_D",
+    "name": "File Replacement (Complete Substitution)",
+    "description": "Replacing genuine document with a forged substitute payload",
+    "documentsTested": 100,
+    "tamperDetected": 100,
+    "tamperUndetected": 0,
+    "detectionRate": "100.0%"
+  }
+]

@@ -1,0 +1,12 @@
+{
+  "eventsProcessed": 1000,
+  "totalIngestionDurationSec": 0.576,
+  "throughputEventsPerSec": 1735.67,
+  "medianLatencyMs": 0.526,
+  "p95LatencyMs": 0.745,
+  "idempotencyDuplicateInterceptionRate": "100.0%",
+  "databaseTamperDetected": true,
+  "reconciliationRepairStatus": "REPAIRED",
+  "reconciliationDurationMs": 6.106,
+  "groundTruthRestored": true
+}
