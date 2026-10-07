@@ -77,3 +77,12 @@ Thumbs.db
 *.log.*
 logs/
 
+# Research Validation, Documentation & Master Plans (Strictly Local)
+docs/
+research_validation/
+CADASTRA_COMPLETE_RESEARCH_VALIDATION_EVIDENCE_PACKAGE.md
+Blockchain_Land_Registry_Master_Plan.docx
+FUTURE_PRODUCTION_ENHANCEMENTS.md
+Antigravity_Master_Prompt_*.md
+master_plan_text.txt
+
