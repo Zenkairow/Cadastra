@@ -79,6 +79,7 @@ logs/
 
 # Research Validation, Documentation & Master Plans (Strictly Local)
 docs/
+clg_docs/
 research_validation/
 CADASTRA_COMPLETE_RESEARCH_VALIDATION_EVIDENCE_PACKAGE.md
 Blockchain_Land_Registry_Master_Plan.docx

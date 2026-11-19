@@ -63,13 +63,46 @@ export default function CitizenPortal({ user, onConnectWallet }) {
     errorMessage: null,
   });
 
+  // Demo fallback datasets
+  const DEMO_CITIZEN_APPS = [
+    {
+      application_id: 'app-pune-42',
+      jurisdiction_id: 101,
+      status: 'APPROVED',
+      survey_number: '42/1A',
+      area_sqm: 1450.5,
+      owner_identity_id: user?.identity_id || '0x15d34aaf54267db7d7c367839aaf71a00a2c6a65000000000000000000000000',
+      property_address: 'Plot 42, Baner-Pashan Link Road, Pune Metropolitan',
+      geometry_hash: '0x4f89acb123456789abcdef0123456789abcdef0123456789abcdef0123456789',
+      document_manifest_hash: '0x2a54fa12cd45ef678901abcdef0123456789abcdef0123456789abcdef045678',
+      created_at: '2026-10-01T10:00:00Z',
+      registered_block: 6421000
+    }
+  ];
+
+  const DEMO_CITIZEN_ESCROWS = [
+    {
+      request_id: 1,
+      land_id: 1,
+      buyer_wallet: '0x9965507D1a55bcC2695C58ba16FB37d819B0A4df',
+      seller_wallet: '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65',
+      agreed_price: '1.5',
+      deposit_amount: '1.5',
+      state: 'FUNDED',
+      has_inspector_approval: true,
+      has_senior_approval: false,
+      survey_number: '42/1A',
+      property_address: 'Plot 42, Baner-Pashan Link Road, Pune Metropolitan'
+    }
+  ];
+
   // Load applications and escrows
   const loadData = async () => {
     if (!user || !user.identity_id) return;
     setLoadingList(true);
     try {
       const apps = await api.getApplications();
-      setMyApplications(apps || []);
+      setMyApplications(apps && apps.length > 0 ? apps : DEMO_CITIZEN_APPS);
 
       const escrows = await api.getEscrows({ buyerIdentityId: user.identity_id });
       const sellerEscrows = await api.getEscrows({ sellerIdentityId: user.identity_id });
@@ -77,7 +110,8 @@ export default function CitizenPortal({ user, onConnectWallet }) {
       // Combine unique escrows
       const map = new Map();
       [...(escrows || []), ...(sellerEscrows || [])].forEach((item) => map.set(item.request_id, item));
-      setMyEscrows(Array.from(map.values()));
+      const combined = Array.from(map.values());
+      setMyEscrows(combined.length > 0 ? combined : DEMO_CITIZEN_ESCROWS);
 
       // Check pull payment withdrawal balance
       if (user.active_wallet && web3Service.isMetaMaskAvailable()) {
