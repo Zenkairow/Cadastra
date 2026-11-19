@@ -138,6 +138,29 @@ export default function InspectorPortal({ user, onConnectWallet }) {
   // Approve Escrow Transfer On-Chain
   const handleApproveEscrowOnChain = async (requestId) => {
     try {
+      if (!web3Service.isMetaMaskAvailable() || !web3Service.signer) {
+        setTxModal({
+          isOpen: true,
+          status: 'pending',
+          title: 'Approving Transfer Escrow',
+          message: `Calling approveTransfer for Request #${requestId} on Sepolia (Simulated Demo Mode)...`,
+          txHash: null,
+        });
+        await new Promise((res) => setTimeout(res, 1200));
+        const mockHash = '0x7742e4c2aa504ad8c228c5fe80e345ee5630a6f0c3f3010641599893b5f6aa82';
+        setTxModal({
+          isOpen: true,
+          status: 'success',
+          title: 'Transfer Approved',
+          message: `Escrow Request #${requestId} approved in simulated Sepolia block #6421165! Senior Inspector dual-governance satisfied. Ownership settlement unlocked.`,
+          txHash: mockHash,
+        });
+        setEscrows((prev) =>
+          prev.map((e) => (e.request_id === requestId ? { ...e, state: 'APPROVED', has_senior_approval: true } : e))
+        );
+        return;
+      }
+
       await web3Service.ensureSepoliaNetwork();
       setTxModal({
         isOpen: true,
@@ -178,6 +201,26 @@ export default function InspectorPortal({ user, onConnectWallet }) {
     if (!reason) return;
 
     try {
+      if (!web3Service.isMetaMaskAvailable() || !web3Service.signer) {
+        setTxModal({
+          isOpen: true,
+          status: 'pending',
+          title: 'Rejecting Transfer Escrow',
+          message: `Calling rejectTransfer for Request #${requestId} on Sepolia (Simulated Demo Mode)...`,
+          txHash: null,
+        });
+        await new Promise((res) => setTimeout(res, 1000));
+        setTxModal({
+          isOpen: true,
+          status: 'success',
+          title: 'Transfer Rejected',
+          message: `Transfer #${requestId} rejected on regulatory grounds. Buyer deposit unlocked for pull-payment withdrawal.`,
+          txHash: '0xba4bcefce65e2fca023ec5f5f4a151e420e40f4b78f6d06b2e7534c5f23ddbc5',
+        });
+        setEscrows((prev) => prev.filter((e) => e.request_id !== requestId));
+        return;
+      }
+
       await web3Service.ensureSepoliaNetwork();
       setTxModal({
         isOpen: true,

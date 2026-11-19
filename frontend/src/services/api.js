@@ -38,12 +38,17 @@ function getMockResponse(endpoint, options = {}) {
 
   // Applications
   if (endpoint.startsWith('/applications/draft')) {
+    const appId = 'app-' + Date.now();
     return {
-      application_id: 'app-' + Date.now(),
+      id: appId,
+      application_id: appId,
       jurisdiction_id: body.jurisdiction_id || 101,
       status: 'SUBMITTED',
       survey_number: body.survey_number || '42/1B',
       area_sqm: body.area_sqm || 1200,
+      parcel_key: '0x789abcde0123456789abcdef0123456789abcdef0123456789abcdef01234567',
+      geometry_hash: '0x4f89acb123456789abcdef0123456789abcdef0123456789abcdef0123456789',
+      applicant_identity_id: '0x15d34aaf54267db7d7c367839aaf71a00a2c6a65000000000000000000000000',
       property_address: body.property_address || 'Plot 42/1B, Baner-Pashan Road, Pune Metropolitan',
       created_at: new Date().toISOString()
     };
@@ -54,12 +59,15 @@ function getMockResponse(endpoint, options = {}) {
   if (endpoint.startsWith('/applications')) {
     return [
       {
+        id: 'app-pune-42',
         application_id: 'app-pune-42',
         jurisdiction_id: 101,
         status: 'APPROVED',
         survey_number: '42/1A',
         area_sqm: 1450.5,
+        parcel_key: '0x789abcde0123456789abcdef0123456789abcdef0123456789abcdef01234567',
         owner_identity_id: '0x15d34aaf54267db7d7c367839aaf71a00a2c6a65000000000000000000000000',
+        applicant_identity_id: '0x15d34aaf54267db7d7c367839aaf71a00a2c6a65000000000000000000000000',
         property_address: 'Plot 42, Baner-Pashan Link Road, Pune Metropolitan',
         geometry_hash: '0x4f89acb123456789abcdef0123456789abcdef0123456789abcdef0123456789',
         document_manifest_hash: '0x2a54fa12cd45ef678901abcdef0123456789abcdef0123456789abcdef045678',
@@ -67,12 +75,15 @@ function getMockResponse(endpoint, options = {}) {
         registered_block: 6421000
       },
       {
+        id: 'app-pune-108',
         application_id: 'app-pune-108',
         jurisdiction_id: 101,
         status: 'SUBMITTED',
         survey_number: '108/2B',
         area_sqm: 850.0,
+        parcel_key: '0x890bcdef0123456789abcdef0123456789abcdef0123456789abcdef01234568',
         owner_identity_id: '0x9965507d1a55bcc2695c58ba16fb37d819b0a4df000000000000000000000000',
+        applicant_identity_id: '0x9965507d1a55bcc2695c58ba16fb37d819b0a4df000000000000000000000000',
         property_address: 'Plot 108, Kothrud Commercial Corridor, Pune Metropolitan',
         geometry_hash: '0x5b98fed123456789abcdef0123456789abcdef0123456789abcdef0123456789',
         document_manifest_hash: '0x1b43fa12cd45ef678901abcdef0123456789abcdef0123456789abcdef045678',
@@ -236,13 +247,34 @@ function getMockResponse(endpoint, options = {}) {
       ]
     };
   }
+  if (endpoint.startsWith('/system/reconcile')) {
+    return {
+      status: 'SUCCESS',
+      checked_parcels: 24,
+      mismatches_detected: 0,
+      repaired_records: 0,
+      execution_time_ms: 6.12,
+      last_reconciliation_time: new Date().toISOString(),
+      contracts_verified: ['IdentityRegistry', 'InspectorRegistry', 'LandRegistry', 'TransferEscrow'],
+      message: 'On-chain Sepolia ground truth reconciled with PostgreSQL read model. Zero divergence detected.'
+    };
+  }
   if (endpoint.startsWith('/documents/verify')) {
     return {
-      is_tampered: false,
-      on_chain_hash: '0x2a54fa12cd45ef678901abcdef0123456789abcdef0123456789abcdef045678',
-      computed_hash: '0x2a54fa12cd45ef678901abcdef0123456789abcdef0123456789abcdef045678',
-      match: true,
-      message: 'Cryptographic manifest hash matches on-chain LandRegistry anchor (Tamper-free).'
+      status: 'INTACT',
+      total_documents: 3,
+      tampered_count: 0,
+      tampered_documents: [],
+      checked_documents: [
+        { file_name: 'registered_sale_deed_plot42.pdf', expected_sha256: '0x9f8e7d81884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08', actual_sha256: '0x9f8e7d81884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08', status: 'MATCH' },
+        { file_name: 'pmc_property_tax_2026.pdf', expected_sha256: '0x8e7d6c81884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a09', actual_sha256: '0x8e7d6c81884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a09', status: 'MATCH' },
+        { file_name: 'cadastral_survey_vector_42.geojson', expected_sha256: '0x7d6c5b81884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a10', actual_sha256: '0x7d6c5b81884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a10', status: 'MATCH' }
+      ],
+      stored_db_manifest_hash: '0x2a54fa12cd45ef678901abcdef0123456789abcdef0123456789abcdef045678',
+      computed_storage_manifest_hash: '0x2a54fa12cd45ef678901abcdef0123456789abcdef0123456789abcdef045678',
+      manifest_integrity: 'INTACT',
+      on_chain_manifest_hash: '0x2a54fa12cd45ef678901abcdef0123456789abcdef0123456789abcdef045678',
+      on_chain_integrity: 'MATCH_ON_CHAIN'
     };
   }
 

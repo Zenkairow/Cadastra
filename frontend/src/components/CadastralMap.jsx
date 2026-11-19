@@ -15,16 +15,19 @@ import { api } from '../services/api';
 
 export default function CadastralMap({ 
   mode = 'view', // 'view' or 'draw'
+  interactive = false,
   onPolygonCreated = null, 
+  onPolygonChange = null,
   highlightParcelId = null,
   overlays = [],
   height = '500px'
 }) {
+  const polygonCallback = onPolygonCreated || onPolygonChange;
   const canvasRef = useRef(null);
   const [parcels, setParcels] = useState([]);
   const [selectedParcel, setSelectedParcel] = useState(null);
   const [drawnPoints, setDrawnPoints] = useState([]);
-  const [isDrawing, setIsDrawing] = useState(mode === 'draw');
+  const [isDrawing, setIsDrawing] = useState(mode === 'draw' || interactive === true);
   const [loading, setLoading] = useState(false);
 
   // Map view transform state (centered on Pune: lon 73.856, lat 18.520)
@@ -257,14 +260,14 @@ export default function CadastralMap({
         if (dist < 15) {
           const closed = [...drawnPoints, drawnPoints[0]];
           setDrawnPoints(closed);
-          if (onPolygonCreated) onPolygonCreated(closed);
+          if (polygonCallback) polygonCallback(closed);
           return;
         }
       }
 
       setDrawnPoints(newPoints);
-      if (newPoints.length >= 4 && onPolygonCreated) {
-        onPolygonCreated([...newPoints, newPoints[0]]);
+      if (newPoints.length >= 3 && polygonCallback) {
+        polygonCallback([...newPoints, newPoints[0]]);
       }
     } else {
       // Find clicked parcel

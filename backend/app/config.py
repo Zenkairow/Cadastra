@@ -1,8 +1,11 @@
+from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 from typing import List
 import os
 
 class Settings(BaseSettings):
+    model_config = ConfigDict(env_file="../.env", extra="ignore")
+
     # Application Info
     APP_NAME: str = "Blockchain Land Registry API"
     APP_VERSION: str = "1.0.0"
@@ -43,9 +46,5 @@ class Settings(BaseSettings):
     MINIO_BUCKET: str = "land-documents"
     MINIO_SECURE: bool = False
     DOCUMENT_SIGNED_URL_EXPIRE_SECONDS: int = 900 # 15 minutes
-
-    class Config:
-        env_file = "../.env"
-        extra = "ignore"
 
 settings = Settings()
