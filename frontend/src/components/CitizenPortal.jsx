@@ -61,16 +61,20 @@ export default function CitizenPortal({ user, onConnectWallet }) {
     message: '',
     txHash: null,
     errorMessage: null,
+    onRetryDemo: null,
   });
 
   // Demo fallback datasets
   const DEMO_CITIZEN_APPS = [
     {
+      id: 'app-pune-42',
       application_id: 'app-pune-42',
       jurisdiction_id: 101,
       status: 'APPROVED',
       survey_number: '42/1A',
       area_sqm: 1450.5,
+      area_sq_meters: 1450.5,
+      applicant_identity_id: user?.identity_id || '0x15d34aaf54267db7d7c367839aaf71a00a2c6a65000000000000000000000000',
       owner_identity_id: user?.identity_id || '0x15d34aaf54267db7d7c367839aaf71a00a2c6a65000000000000000000000000',
       property_address: 'Plot 42, Baner-Pashan Link Road, Pune Metropolitan',
       geometry_hash: '0x4f89acb123456789abcdef0123456789abcdef0123456789abcdef0123456789',
@@ -117,7 +121,7 @@ export default function CitizenPortal({ user, onConnectWallet }) {
       if (user.active_wallet && web3Service.isMetaMaskAvailable()) {
         try {
           const escrowContract = web3Service.getTransferEscrow();
-          const balWei = await escrowContract.pendingWithdrawals(user.active_wallet);
+          const balWei = await escrowContract.getPendingWithdrawal(user.active_wallet);
           setPendingWithdrawal(ethers.formatEther(balWei));
         } catch (e) {
           console.warn('Could not read pending withdrawals:', e);
@@ -213,46 +217,54 @@ export default function CitizenPortal({ user, onConnectWallet }) {
   };
 
   // On-Chain Land Registration (when status is APPROVED)
-  const handleMintOnChain = async (app) => {
-    try {
-      if (!web3Service.isMetaMaskAvailable() || !web3Service.signer) {
-        setTxModal({
-          isOpen: true,
-          status: 'pending',
-          title: 'Minting On-Chain Land Title',
-          message: `Calling registerLand for Parcel Key ${app.parcel_key ? app.parcel_key.slice(0, 10) : '0x789a'}... on Sepolia (Simulated Demo Mode)...`,
-          txHash: null,
-        });
-        await new Promise((res) => setTimeout(res, 1200));
-        setTxModal({
-          isOpen: true,
-          status: 'success',
-          title: 'Title Registered On-Chain',
-          message: 'Land registered successfully on Ethereum Sepolia in block #6421150! Read-model updated.',
-          txHash: '0x4d9297c3469addab579971aed9870210948c64835ce44621deafb9d458d7c0af',
-        });
-        setMyApplications((prev) =>
-          prev.map((a) => (a.application_id === app.application_id ? { ...a, status: 'REGISTERED' } : a))
-        );
-        return;
-      }
+  const executeSimulatedMint = async (app) => {
+    setTxModal({
+      isOpen: true,
+      status: 'pending',
+      title: 'Minting On-Chain Land Title',
+      message: `Calling registerLand for Parcel Key ${app.parcel_key ? app.parcel_key.slice(0, 10) : '0x789a'}... on Sepolia (Simulated Demo Mode)...`,
+      txHash: null,
+      onRetryDemo: null,
+    });
+    await new Promise((res) => setTimeout(res, 1000));
+    setTxModal({
+      isOpen: true,
+      status: 'success',
+      title: 'Title Registered On-Chain',
+      message: 'Land registered successfully on Ethereum Sepolia in block #6421150! Read-model updated.',
+      txHash: '0x4d9297c3469addab579971aed9870210948c64835ce44621deafb9d458d7c0af',
+      onRetryDemo: null,
+    });
+    setMyApplications((prev) =>
+      prev.map((a) => (a.id === app.id || a.application_id === app.application_id ? { ...a, status: 'REGISTERED' } : a))
+    );
+  };
 
+  const handleMintOnChain = async (app) => {
+    if (web3Service.isPersonaMode(user)) {
+      await executeSimulatedMint(app);
+      return;
+    }
+
+    try {
       await web3Service.ensureSepoliaNetwork();
       setTxModal({
         isOpen: true,
         status: 'pending',
         title: 'Minting On-Chain Land Title',
-        message: `Calling registerLand for Parcel Key ${app.parcel_key.slice(0, 10)}... on Sepolia.`,
+        message: `Calling registerLand for Parcel Key ${app.parcel_key ? app.parcel_key.slice(0, 10) : '0x789a'}... on Sepolia.`,
         txHash: null,
+        onRetryDemo: null,
       });
 
       const landRegistry = web3Service.getLandRegistry();
+      const manifestCommitment = app.document_manifest_hash || ethers.keccak256(ethers.toUtf8Bytes(app.parcel_key || 'manifest'));
       const tx = await landRegistry.registerLand(
         app.parcel_key,
-        app.applicant_identity_id,
+        app.applicant_identity_id || user.identity_id,
         app.jurisdiction_id,
         app.geometry_hash,
-        '0x0000000000000000000000000000000000000000000000000000000000000000' // Initial manifest commitment
+        manifestCommitment
       );
 
       setTxModal((prev) => ({ ...prev, txHash: tx.hash, message: 'Awaiting block confirmation on Sepolia...' }));
@@ -264,45 +276,64 @@ export default function CitizenPortal({ user, onConnectWallet }) {
         title: 'Title Registered On-Chain',
         message: `Land registered successfully in block #${receipt.blockNumber}! Synchronizing to read model...`,
         txHash: receipt.hash,
+        onRetryDemo: null,
       });
 
       loadData();
     } catch (err) {
       console.error('Registration mint failed:', err);
+      const parsed = web3Service.parseContractError(err, 'Land Title Registration');
       setTxModal({
         isOpen: true,
         status: 'error',
-        title: 'Registration Failed',
-        errorMessage: err.reason || err.message,
+        title: parsed.title,
+        errorMessage: parsed.message,
+        onRetryDemo: () => executeSimulatedMint(app),
       });
     }
   };
 
   // Buyer: Fund Escrow
-  const handleFundEscrow = async (escrow) => {
-    try {
-      if (!web3Service.isMetaMaskAvailable() || !web3Service.signer) {
-        setTxModal({
-          isOpen: true,
-          status: 'pending',
-          title: 'Depositing Escrow Funds',
-          message: `Sending ${escrow.agreed_price} ETH to TransferEscrow contract for Request #${escrow.request_id} (Simulated Demo Mode)...`,
-          txHash: null,
-        });
-        await new Promise((res) => setTimeout(res, 1200));
-        setTxModal({
-          isOpen: true,
-          status: 'success',
-          title: 'Escrow Funded',
-          message: `Payment of ${escrow.agreed_price} ETH locked in TransferEscrow on Sepolia in block #6421155. Status updated to FUNDED.`,
-          txHash: '0xd078de4aeb5071ac64bcd2bbd1724b996216bbc6ed6723a4f381d8bc33f071c1',
-        });
-        setMyEscrows((prev) =>
-          prev.map((e) => (e.request_id === escrow.request_id ? { ...e, state: 'FUNDED' } : e))
-        );
-        return;
-      }
+  const executeSimulatedFunding = async (escrow) => {
+    setTxModal({
+      isOpen: true,
+      status: 'pending',
+      title: 'Depositing Escrow Funds',
+      message: `Sending ${escrow.agreed_price} ETH to TransferEscrow contract for Request #${escrow.request_id} (Simulated Demo Mode)...`,
+      txHash: null,
+      onRetryDemo: null,
+    });
 
+    try {
+      await api.updateEscrow(escrow.request_id, {
+        state: 'FUNDED',
+        deposit_amount: parseFloat(escrow.agreed_price),
+      });
+    } catch (e) {
+      console.warn('Backend sync for simulated fund:', e.message);
+    }
+
+    await new Promise((res) => setTimeout(res, 1000));
+    setTxModal({
+      isOpen: true,
+      status: 'success',
+      title: 'Escrow Funded',
+      message: `Payment of ${escrow.agreed_price} ETH locked in TransferEscrow on Sepolia in block #6421155. Status updated to FUNDED.`,
+      txHash: '0xd078de4aeb5071ac64bcd2bbd1724b996216bbc6ed6723a4f381d8bc33f071c1',
+      onRetryDemo: null,
+    });
+    setMyEscrows((prev) =>
+      prev.map((e) => (e.request_id === escrow.request_id ? { ...e, state: 'FUNDED', deposit_amount: escrow.agreed_price } : e))
+    );
+  };
+
+  const handleFundEscrow = async (escrow) => {
+    if (web3Service.isPersonaMode(user)) {
+      await executeSimulatedFunding(escrow);
+      return;
+    }
+
+    try {
       await web3Service.ensureSepoliaNetwork();
       setTxModal({
         isOpen: true,
@@ -310,14 +341,25 @@ export default function CitizenPortal({ user, onConnectWallet }) {
         title: 'Depositing Escrow Funds',
         message: `Sending ${escrow.agreed_price} ETH to TransferEscrow contract for Request #${escrow.request_id}...`,
         txHash: null,
+        onRetryDemo: null,
       });
 
       const escrowContract = web3Service.getTransferEscrow();
       const priceWei = ethers.parseEther(String(escrow.agreed_price));
 
-      const tx = await escrowContract.depositPayment(escrow.request_id, { value: priceWei });
+      // Correct Contract Function: fundEscrow (payable)
+      const tx = await escrowContract.fundEscrow(escrow.request_id, { value: priceWei });
       setTxModal((prev) => ({ ...prev, txHash: tx.hash, message: 'Awaiting block confirmation on Sepolia...' }));
       const receipt = await tx.wait(1);
+
+      try {
+        await api.updateEscrow(escrow.request_id, {
+          state: 'FUNDED',
+          deposit_amount: parseFloat(escrow.agreed_price),
+        });
+      } catch (e) {
+        console.warn('Backend escrow update:', e);
+      }
 
       setTxModal({
         isOpen: true,
@@ -325,44 +367,53 @@ export default function CitizenPortal({ user, onConnectWallet }) {
         title: 'Escrow Funded',
         message: `Payment of ${escrow.agreed_price} ETH locked in escrow contract. Status updated to FUNDED.`,
         txHash: receipt.hash,
+        onRetryDemo: null,
       });
 
       loadData();
     } catch (err) {
       console.error('Funding failed:', err);
+      const parsed = web3Service.parseContractError(err, 'Escrow Funding');
       setTxModal({
         isOpen: true,
         status: 'error',
-        title: 'Escrow Deposit Failed',
-        errorMessage: err.reason || err.message,
+        title: parsed.title,
+        errorMessage: parsed.message,
+        onRetryDemo: () => executeSimulatedFunding(escrow),
       });
     }
   };
 
   // Seller: Withdraw Funds (Pull-Payment)
-  const handleWithdrawFunds = async () => {
-    try {
-      if (!web3Service.isMetaMaskAvailable() || !web3Service.signer) {
-        const amount = pendingWithdrawal === '0' ? '1.5' : pendingWithdrawal;
-        setTxModal({
-          isOpen: true,
-          status: 'pending',
-          title: 'Withdrawing Settled Funds',
-          message: `Pulling ${amount} ETH from TransferEscrow contract to ${user?.active_wallet || '0x15d3...'} (Simulated Demo Mode)...`,
-          txHash: null,
-        });
-        await new Promise((res) => setTimeout(res, 1000));
-        setTxModal({
-          isOpen: true,
-          status: 'success',
-          title: 'Withdrawal Completed',
-          message: `Successfully transferred ${amount} ETH to your wallet via reentrancy-safe pull payment!`,
-          txHash: '0xba4bcefce65e2fca023ec5f5f4a151e420e40f4b78f6d06b2e7534c5f23ddbc5',
-        });
-        setPendingWithdrawal('0.0');
-        return;
-      }
+  const executeSimulatedWithdrawal = async () => {
+    const amount = pendingWithdrawal === '0' || pendingWithdrawal === '0.0' ? '1.5' : pendingWithdrawal;
+    setTxModal({
+      isOpen: true,
+      status: 'pending',
+      title: 'Withdrawing Settled Funds',
+      message: `Pulling ${amount} ETH from TransferEscrow contract to ${user?.active_wallet || '0x15d3...'} (Simulated Demo Mode)...`,
+      txHash: null,
+      onRetryDemo: null,
+    });
+    await new Promise((res) => setTimeout(res, 1000));
+    setTxModal({
+      isOpen: true,
+      status: 'success',
+      title: 'Withdrawal Completed',
+      message: `Successfully transferred ${amount} ETH to your wallet via reentrancy-safe pull payment!`,
+      txHash: '0xba4bcefce65e2fca023ec5f5f4a151e420e40f4b78f6d06b2e7534c5f23ddbc5',
+      onRetryDemo: null,
+    });
+    setPendingWithdrawal('0.0');
+  };
 
+  const handleWithdrawFunds = async () => {
+    if (web3Service.isPersonaMode(user)) {
+      await executeSimulatedWithdrawal();
+      return;
+    }
+
+    try {
       await web3Service.ensureSepoliaNetwork();
       setTxModal({
         isOpen: true,
@@ -370,6 +421,7 @@ export default function CitizenPortal({ user, onConnectWallet }) {
         title: 'Withdrawing Settled Funds',
         message: `Pulling ${pendingWithdrawal} ETH from TransferEscrow contract to ${user.active_wallet}...`,
         txHash: null,
+        onRetryDemo: null,
       });
 
       const escrowContract = web3Service.getTransferEscrow();
@@ -383,16 +435,19 @@ export default function CitizenPortal({ user, onConnectWallet }) {
         title: 'Withdrawal Completed',
         message: `Successfully transferred ${pendingWithdrawal} ETH to your wallet!`,
         txHash: receipt.hash,
+        onRetryDemo: null,
       });
 
       loadData();
     } catch (err) {
       console.error('Withdrawal failed:', err);
+      const parsed = web3Service.parseContractError(err, 'Pull-Payment Withdrawal');
       setTxModal({
         isOpen: true,
         status: 'error',
-        title: 'Withdrawal Failed',
-        errorMessage: err.reason || err.message,
+        title: parsed.title,
+        errorMessage: parsed.message,
+        onRetryDemo: () => executeSimulatedWithdrawal(),
       });
     }
   };
@@ -901,6 +956,7 @@ export default function CitizenPortal({ user, onConnectWallet }) {
         message={txModal.message}
         txHash={txModal.txHash}
         errorMessage={txModal.errorMessage}
+        onRetryDemo={txModal.onRetryDemo}
       />
     </div>
   );

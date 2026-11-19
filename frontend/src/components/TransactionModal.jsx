@@ -1,5 +1,5 @@
 import React from 'react';
-import { ExternalLink, CheckCircle, AlertCircle, Loader, X } from 'lucide-react';
+import { ExternalLink, CheckCircle, AlertCircle, Loader, X, Play } from 'lucide-react';
 
 export default function TransactionModal({
   isOpen,
@@ -9,6 +9,7 @@ export default function TransactionModal({
   message = 'Please confirm the transaction in MetaMask and wait for Sepolia block confirmation.',
   txHash = null,
   errorMessage = null,
+  onRetryDemo = null,
 }) {
   if (!isOpen) return null;
 
@@ -54,7 +55,7 @@ export default function TransactionModal({
 
           <h3 style={{ fontSize: '1.35rem', fontWeight: 600, marginBottom: '0.75rem' }}>{title}</h3>
           
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.925rem', lineHeight: 1.5, marginBottom: '1.5rem' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.925rem', lineHeight: 1.5, marginBottom: '1.5rem', wordBreak: 'break-word' }}>
             {status === 'error' ? errorMessage || 'An unexpected Web3 error occurred.' : message}
           </p>
 
@@ -90,10 +91,26 @@ export default function TransactionModal({
             </div>
           )}
 
-          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            {status === 'error' && onRetryDemo && (
+              <button
+                className="btn-primary"
+                onClick={() => {
+                  onClose();
+                  onRetryDemo();
+                }}
+                style={{ minWidth: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+              >
+                <Play size={16} /> Continue in Demo Mode
+              </button>
+            )}
             {status !== 'pending' && (
-              <button className="btn-primary" onClick={onClose} style={{ minWidth: '140px' }}>
-                Done
+              <button
+                className={status === 'error' && onRetryDemo ? 'btn-secondary' : 'btn-primary'}
+                onClick={onClose}
+                style={{ minWidth: '120px' }}
+              >
+                {status === 'error' && onRetryDemo ? 'Dismiss' : 'Done'}
               </button>
             )}
           </div>

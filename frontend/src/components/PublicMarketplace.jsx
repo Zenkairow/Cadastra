@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, ShieldCheck, MapPin, Layers, ExternalLink, ArrowRight, CheckCircle2, Lock, FileText, RefreshCw } from 'lucide-react';
 import { api } from '../services/api';
-import { web3Service } from '../services/web3';
+import { web3Service, CONTRACT_ADDRESSES } from '../services/web3';
 import CadastralMap from './CadastralMap';
 import TransactionModal from './TransactionModal';
 import { ethers } from 'ethers';
@@ -15,7 +15,7 @@ export default function PublicMarketplace({ user, onConnectWallet }) {
   const [escrowModalOpen, setEscrowModalOpen] = useState(false);
   const [escrowPriceEth, setEscrowPriceEth] = useState('1.5');
   const [escrowDurationDays, setEscrowDurationDays] = useState(14);
-  const [txModal, setTxModal] = useState({ isOpen: false, status: 'pending', title: '', message: '', txHash: null, errorMessage: null });
+  const [txModal, setTxModal] = useState({ isOpen: false, status: 'pending', title: '', message: '', txHash: null, errorMessage: null, onRetryDemo: null });
 
   const SAMPLE_PARCELS = [
     {
@@ -99,6 +99,48 @@ export default function PublicMarketplace({ user, onConnectWallet }) {
     );
   });
 
+  const executeSimulatedEscrow = async () => {
+    setTxModal({
+      isOpen: true,
+      status: 'pending',
+      title: 'Initiating Transfer Escrow',
+      message: `Submitting requestTransfer for Land #${selectedLand.land_id} at ${escrowPriceEth} ETH on Sepolia (Simulated Demo Mode)...`,
+      txHash: null,
+      onRetryDemo: null,
+    });
+    try {
+      // Record escrow in backend read-model
+      await api.createEscrow({
+        land_id: selectedLand.land_id,
+        buyer_identity_id: user.identity_id,
+        seller_identity_id: selectedLand.owner_identity_id,
+        buyer_wallet: user.active_wallet,
+        agreed_price: parseFloat(escrowPriceEth),
+        duration_days: parseInt(escrowDurationDays, 10),
+      });
+    } catch (e) {
+      console.warn('Backend sync for simulated escrow:', e.message);
+    }
+
+    await new Promise((res) => setTimeout(res, 1000));
+    const mockHash = '0xd078de4aeb5071ac64bcd2bbd1724b996216bbc6ed6723a4f381d8bc33f071c1';
+    setTxModal({
+      isOpen: true,
+      status: 'success',
+      title: 'Escrow Request Created',
+      message: `Transfer Escrow created successfully for Land #${selectedLand.land_id} in Sepolia block #6421160! Status updated to LOCKED_IN_TRANSFER.`,
+      txHash: mockHash,
+      onRetryDemo: null,
+    });
+    setLands((prev) =>
+      prev.map((l) => (l.land_id === selectedLand.land_id ? { ...l, status: 'LOCKED_IN_TRANSFER' } : l))
+    );
+    if (selectedLand) {
+      setSelectedLand((prev) => ({ ...prev, status: 'LOCKED_IN_TRANSFER' }));
+    }
+    setEscrowModalOpen(false);
+  };
+
   const handleInitiateEscrow = async (e) => {
     e.preventDefault();
     if (!user || !user.active_wallet) {
@@ -107,54 +149,62 @@ export default function PublicMarketplace({ user, onConnectWallet }) {
       return;
     }
 
-    try {
-      if (!web3Service.isMetaMaskAvailable() || !web3Service.signer) {
-        setTxModal({
-          isOpen: true,
-          status: 'pending',
-          title: 'Initiating Transfer Escrow',
-          message: `Submitting requestTransfer for Land #${selectedLand.land_id} at ${escrowPriceEth} ETH on Sepolia (Simulated Demo Mode)...`,
-          txHash: null,
-        });
-        await new Promise((res) => setTimeout(res, 1200));
-        const mockHash = '0xd078de4aeb5071ac64bcd2bbd1724b996216bbc6ed6723a4f381d8bc33f071c1';
-        setTxModal({
-          isOpen: true,
-          status: 'success',
-          title: 'Escrow Request Created',
-          message: `Transfer Escrow created successfully on Ethereum Sepolia in block #6421160! Status updated to LOCKED_IN_TRANSFER.`,
-          txHash: mockHash,
-        });
-        setLands((prev) =>
-          prev.map((l) => (l.land_id === selectedLand.land_id ? { ...l, status: 'LOCKED_IN_TRANSFER' } : l))
-        );
-        setEscrowModalOpen(false);
-        return;
-      }
+    // Owner protection: cannot buy your own parcel
+    if (user.identity_id && selectedLand.owner_identity_id &&
+        user.identity_id.toLowerCase() === selectedLand.owner_identity_id.toLowerCase()) {
+      alert('You are already the registered owner of this land parcel.');
+      return;
+    }
 
+    // Persona Mode Check: If using a Quick Sign In persona or MetaMask wallet differs
+    if (web3Service.isPersonaMode(user)) {
+      await executeSimulatedEscrow();
+      return;
+    }
+
+    try {
       await web3Service.ensureSepoliaNetwork();
       setTxModal({
         isOpen: true,
         status: 'pending',
         title: 'Initiating Transfer Escrow',
-        message: `Submitting requestTransfer for Land #${selectedLand.land_id} at ${escrowPriceEth} ETH.`,
+        message: `Submitting requestTransfer for Land #${selectedLand.land_id} at ${escrowPriceEth} ETH on Sepolia...`,
         txHash: null,
+        onRetryDemo: null,
       });
 
       const escrowContract = web3Service.getTransferEscrow();
       const priceWei = ethers.parseEther(escrowPriceEth);
-      const expirationSeconds = Math.floor(Date.now() / 1000) + Number(escrowDurationDays) * 86400;
+      const durationSeconds = Number(escrowDurationDays) * 86400;
 
-      // seller identity is selectedLand.owner_identity_id
+      // Smart Contract Call:
+      // Parameter 1: landId
+      // Parameter 2: buyerIdentityId (user.identity_id)
+      // Parameter 3: agreedPrice (priceWei)
+      // Parameter 4: durationInSeconds
       const tx = await escrowContract.requestTransfer(
         selectedLand.land_id,
-        selectedLand.owner_identity_id,
+        user.identity_id,
         priceWei,
-        expirationSeconds
+        durationSeconds
       );
 
       setTxModal((prev) => ({ ...prev, txHash: tx.hash, message: 'Awaiting block confirmation on Sepolia...' }));
       const receipt = await tx.wait(1);
+
+      // Record in backend read model
+      try {
+        await api.createEscrow({
+          land_id: selectedLand.land_id,
+          buyer_identity_id: user.identity_id,
+          seller_identity_id: selectedLand.owner_identity_id,
+          buyer_wallet: user.active_wallet,
+          agreed_price: parseFloat(escrowPriceEth),
+          duration_days: parseInt(escrowDurationDays, 10),
+        });
+      } catch (e) {
+        console.warn('Backend escrow sync:', e);
+      }
 
       setTxModal({
         isOpen: true,
@@ -162,17 +212,20 @@ export default function PublicMarketplace({ user, onConnectWallet }) {
         title: 'Escrow Request Created',
         message: `Transfer Escrow created successfully in block #${receipt.blockNumber}. Buyer can now fund the escrow.`,
         txHash: receipt.hash,
+        onRetryDemo: null,
       });
 
       setEscrowModalOpen(false);
       loadLands();
     } catch (err) {
       console.error('Escrow initiation error:', err);
+      const parsed = web3Service.parseContractError(err, 'Escrow Creation');
       setTxModal({
         isOpen: true,
         status: 'error',
-        title: 'Escrow Creation Failed',
-        errorMessage: err.reason || err.message,
+        title: parsed.title,
+        errorMessage: parsed.message,
+        onRetryDemo: () => executeSimulatedEscrow(),
       });
     }
   };
@@ -402,9 +455,9 @@ export default function PublicMarketplace({ user, onConnectWallet }) {
             </div>
 
             {/* Escrow Trigger Actions */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '1.25rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '1.25rem' }}>
               <a
-                href={`https://sepolia.etherscan.io/address/${web3Service.CONTRACT_ADDRESSES?.LandRegistry}`}
+                href={`https://sepolia.etherscan.io/address/${CONTRACT_ADDRESSES.LandRegistry}`}
                 target="_blank"
                 rel="noreferrer"
                 className="btn-secondary"
@@ -415,14 +468,21 @@ export default function PublicMarketplace({ user, onConnectWallet }) {
               </a>
 
               {selectedLand.status === 'VERIFIED' && (
-                <button
-                  className="btn-primary"
-                  onClick={() => setEscrowModalOpen(true)}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
-                >
-                  <Lock size={15} />
-                  Initiate Purchase Escrow
-                </button>
+                user?.identity_id && selectedLand?.owner_identity_id &&
+                user.identity_id.toLowerCase() === selectedLand.owner_identity_id.toLowerCase() ? (
+                  <div className="badge badge-verified" style={{ padding: '8px 14px', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <ShieldCheck size={16} /> Registered Owner (You)
+                  </div>
+                ) : (
+                  <button
+                    className="btn-primary"
+                    onClick={() => setEscrowModalOpen(true)}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+                  >
+                    <Lock size={15} />
+                    Initiate Purchase Escrow
+                  </button>
+                )
               )}
             </div>
           </div>
@@ -500,6 +560,7 @@ export default function PublicMarketplace({ user, onConnectWallet }) {
         message={txModal.message}
         txHash={txModal.txHash}
         errorMessage={txModal.errorMessage}
+        onRetryDemo={txModal.onRetryDemo}
       />
     </div>
   );

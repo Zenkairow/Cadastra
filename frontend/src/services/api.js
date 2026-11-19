@@ -151,6 +151,32 @@ function getMockResponse(endpoint, options = {}) {
 
   // Escrows
   if (endpoint.startsWith('/escrows')) {
+    if (options.method === 'POST') {
+      const nextId = Math.floor(Math.random() * 900) + 10;
+      return {
+        request_id: nextId,
+        land_id: body.land_id || 1,
+        buyer_identity_id: body.buyer_identity_id || '0x9965507d1a55bcc2695c58ba16fb37d819b0a4df000000000000000000000000',
+        seller_identity_id: body.seller_identity_id || '0x15d34aaf54267db7d7c367839aaf71a00a2c6a65000000000000000000000000',
+        buyer_wallet: body.buyer_wallet || '0x9965507D1a55bcC2695C58ba16FB37d819B0A4df',
+        agreed_price: body.agreed_price || 1.5,
+        deposit_amount: 0,
+        state: 'REQUESTED',
+        approval_count: 0,
+        has_senior_approval: false,
+        expires_at: new Date(Date.now() + 14 * 86400 * 1000).toISOString(),
+      };
+    }
+    if (options.method === 'PATCH') {
+      return {
+        request_id: 1,
+        land_id: 1,
+        state: body.state || 'FUNDED',
+        deposit_amount: body.deposit_amount || 1.5,
+        approval_count: body.approval_count || 1,
+        has_senior_approval: Boolean(body.has_senior_approval),
+      };
+    }
     return [
       {
         request_id: 1,
@@ -413,6 +439,20 @@ class ApiClient {
 
   async getEscrowById(requestId) {
     return this.request(`/escrows/${requestId}`);
+  }
+
+  async createEscrow(escrowData) {
+    return this.request('/escrows', {
+      method: 'POST',
+      body: JSON.stringify(escrowData),
+    });
+  }
+
+  async updateEscrow(requestId, updateData) {
+    return this.request(`/escrows/${requestId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updateData),
+    });
   }
 
   // --- System & Audit Endpoints ---

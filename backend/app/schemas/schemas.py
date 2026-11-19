@@ -191,6 +191,21 @@ class GeometryIntegrityResponse(BaseModel):
     status: str # MATCH, DRIFT_DETECTED
 
 # --- Escrow Read-Model Schemas ---
+class CreateEscrowRequest(BaseModel):
+    land_id: int
+    buyer_identity_id: str
+    seller_identity_id: str
+    buyer_wallet: Optional[str] = None
+    agreed_price: float
+    duration_days: Optional[int] = 14
+
+class UpdateEscrowRequest(BaseModel):
+    state: Optional[str] = None
+    deposit_amount: Optional[float] = None
+    has_senior_approval: Optional[bool] = None
+    approval_count: Optional[int] = None
+    rejection_reason: Optional[str] = None
+
 class EscrowItemResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

@@ -34,6 +34,7 @@ export default function InspectorPortal({ user, onConnectWallet }) {
     message: '',
     txHash: null,
     errorMessage: null,
+    onRetryDemo: null,
   });
 
   const DEMO_APPS = [
@@ -136,31 +137,47 @@ export default function InspectorPortal({ user, onConnectWallet }) {
   };
 
   // Approve Escrow Transfer On-Chain
-  const handleApproveEscrowOnChain = async (requestId) => {
-    try {
-      if (!web3Service.isMetaMaskAvailable() || !web3Service.signer) {
-        setTxModal({
-          isOpen: true,
-          status: 'pending',
-          title: 'Approving Transfer Escrow',
-          message: `Calling approveTransfer for Request #${requestId} on Sepolia (Simulated Demo Mode)...`,
-          txHash: null,
-        });
-        await new Promise((res) => setTimeout(res, 1200));
-        const mockHash = '0x7742e4c2aa504ad8c228c5fe80e345ee5630a6f0c3f3010641599893b5f6aa82';
-        setTxModal({
-          isOpen: true,
-          status: 'success',
-          title: 'Transfer Approved',
-          message: `Escrow Request #${requestId} approved in simulated Sepolia block #6421165! Senior Inspector dual-governance satisfied. Ownership settlement unlocked.`,
-          txHash: mockHash,
-        });
-        setEscrows((prev) =>
-          prev.map((e) => (e.request_id === requestId ? { ...e, state: 'APPROVED', has_senior_approval: true } : e))
-        );
-        return;
-      }
+  const executeSimulatedApproval = async (requestId) => {
+    setTxModal({
+      isOpen: true,
+      status: 'pending',
+      title: 'Approving Transfer Escrow',
+      message: `Calling approveTransfer for Request #${requestId} on Sepolia (Simulated Demo Mode)...`,
+      txHash: null,
+      onRetryDemo: null,
+    });
 
+    try {
+      await api.updateEscrow(requestId, {
+        state: 'APPROVED',
+        has_senior_approval: true,
+      });
+    } catch (e) {
+      console.warn('Backend sync for simulated approval:', e.message);
+    }
+
+    await new Promise((res) => setTimeout(res, 1000));
+    const mockHash = '0x7742e4c2aa504ad8c228c5fe80e345ee5630a6f0c3f3010641599893b5f6aa82';
+    setTxModal({
+      isOpen: true,
+      status: 'success',
+      title: 'Transfer Approved',
+      message: `Escrow Request #${requestId} approved in simulated Sepolia block #6421165! Senior Inspector dual-governance satisfied. Ownership settlement unlocked.`,
+      txHash: mockHash,
+      onRetryDemo: null,
+    });
+    setEscrows((prev) =>
+      prev.map((e) => (e.request_id === requestId ? { ...e, state: 'APPROVED', has_senior_approval: true, approval_count: (e.approval_count || 0) + 1 } : e))
+    );
+  };
+
+  const handleApproveEscrowOnChain = async (requestId) => {
+    if (web3Service.isPersonaMode(user)) {
+      await executeSimulatedApproval(requestId);
+      return;
+    }
+
+    try {
       await web3Service.ensureSepoliaNetwork();
       setTxModal({
         isOpen: true,
@@ -168,6 +185,7 @@ export default function InspectorPortal({ user, onConnectWallet }) {
         title: 'Approving Transfer Escrow',
         message: `Calling approveTransfer for Request #${requestId} on Sepolia...`,
         txHash: null,
+        onRetryDemo: null,
       });
 
       const escrowContract = web3Service.getTransferEscrow();
@@ -175,52 +193,80 @@ export default function InspectorPortal({ user, onConnectWallet }) {
       setTxModal((prev) => ({ ...prev, txHash: tx.hash, message: 'Awaiting block confirmation on Sepolia...' }));
       const receipt = await tx.wait(1);
 
+      try {
+        await api.updateEscrow(requestId, {
+          state: 'APPROVED',
+          has_senior_approval: true,
+        });
+      } catch (e) {
+        console.warn('Backend escrow update:', e);
+      }
+
       setTxModal({
         isOpen: true,
         status: 'success',
         title: 'Transfer Approved',
         message: `Escrow Request #${requestId} approved in block #${receipt.blockNumber}! Ownership settlement unlocked.`,
         txHash: receipt.hash,
+        onRetryDemo: null,
       });
 
       loadInspectorQueue();
     } catch (err) {
       console.error('Escrow approval failed:', err);
+      const parsed = web3Service.parseContractError(err, 'Escrow Approval');
       setTxModal({
         isOpen: true,
         status: 'error',
-        title: 'Approval Failed',
-        errorMessage: err.reason || err.message,
+        title: parsed.title,
+        errorMessage: parsed.message,
+        onRetryDemo: () => executeSimulatedApproval(requestId),
       });
     }
   };
 
   // Reject Escrow Transfer On-Chain
+  const executeSimulatedRejection = async (requestId, reason) => {
+    setTxModal({
+      isOpen: true,
+      status: 'pending',
+      title: 'Rejecting Transfer Escrow',
+      message: `Calling rejectTransfer for Request #${requestId} on Sepolia (Simulated Demo Mode)...`,
+      txHash: null,
+      onRetryDemo: null,
+    });
+
+    try {
+      await api.updateEscrow(requestId, {
+        state: 'REJECTED',
+        rejection_reason: reason,
+      });
+    } catch (e) {
+      console.warn('Backend sync for simulated reject:', e.message);
+    }
+
+    await new Promise((res) => setTimeout(res, 1000));
+    setTxModal({
+      isOpen: true,
+      status: 'success',
+      title: 'Transfer Rejected',
+      message: `Transfer #${requestId} rejected on regulatory grounds. Buyer deposit unlocked for pull-payment withdrawal.`,
+      txHash: '0xba4bcefce65e2fca023ec5f5f4a151e420e40f4b78f6d06b2e7534c5f23ddbc5',
+      onRetryDemo: null,
+    });
+    setEscrows((prev) => prev.filter((e) => e.request_id !== requestId));
+  };
+
   const handleRejectEscrowOnChain = async (requestId) => {
     const reason = prompt('Please enter the regulatory reason for rejecting this transfer:');
     if (!reason) return;
 
-    try {
-      if (!web3Service.isMetaMaskAvailable() || !web3Service.signer) {
-        setTxModal({
-          isOpen: true,
-          status: 'pending',
-          title: 'Rejecting Transfer Escrow',
-          message: `Calling rejectTransfer for Request #${requestId} on Sepolia (Simulated Demo Mode)...`,
-          txHash: null,
-        });
-        await new Promise((res) => setTimeout(res, 1000));
-        setTxModal({
-          isOpen: true,
-          status: 'success',
-          title: 'Transfer Rejected',
-          message: `Transfer #${requestId} rejected on regulatory grounds. Buyer deposit unlocked for pull-payment withdrawal.`,
-          txHash: '0xba4bcefce65e2fca023ec5f5f4a151e420e40f4b78f6d06b2e7534c5f23ddbc5',
-        });
-        setEscrows((prev) => prev.filter((e) => e.request_id !== requestId));
-        return;
-      }
+    if (web3Service.isPersonaMode(user)) {
+      await executeSimulatedRejection(requestId, reason);
+      return;
+    }
 
+    try {
       await web3Service.ensureSepoliaNetwork();
       setTxModal({
         isOpen: true,
@@ -228,6 +274,7 @@ export default function InspectorPortal({ user, onConnectWallet }) {
         title: 'Rejecting Transfer Escrow',
         message: `Calling rejectTransfer for Request #${requestId}...`,
         txHash: null,
+        onRetryDemo: null,
       });
 
       const escrowContract = web3Service.getTransferEscrow();
@@ -235,22 +282,120 @@ export default function InspectorPortal({ user, onConnectWallet }) {
       setTxModal((prev) => ({ ...prev, txHash: tx.hash, message: 'Awaiting confirmation on Sepolia...' }));
       const receipt = await tx.wait(1);
 
+      try {
+        await api.updateEscrow(requestId, {
+          state: 'REJECTED',
+          rejection_reason: reason,
+        });
+      } catch (e) {
+        console.warn('Backend escrow rejection sync:', e);
+      }
+
       setTxModal({
         isOpen: true,
         status: 'success',
         title: 'Transfer Rejected',
         message: `Transfer rejected in block #${receipt.blockNumber}. Buyer deposit is refunded for withdrawal.`,
         txHash: receipt.hash,
+        onRetryDemo: null,
       });
 
       loadInspectorQueue();
     } catch (err) {
       console.error('Escrow rejection failed:', err);
+      const parsed = web3Service.parseContractError(err, 'Escrow Rejection');
       setTxModal({
         isOpen: true,
         status: 'error',
-        title: 'Rejection Failed',
-        errorMessage: err.reason || err.message,
+        title: parsed.title,
+        errorMessage: parsed.message,
+        onRetryDemo: () => executeSimulatedRejection(requestId, reason),
+      });
+    }
+  };
+
+  // Settle Escrow Transfer On-Chain (Updates ownership in LandRegistry & credits seller)
+  const executeSimulatedSettlement = async (requestId) => {
+    setTxModal({
+      isOpen: true,
+      status: 'pending',
+      title: 'Settling Land Ownership Transfer',
+      message: `Calling settleTransfer for Request #${requestId} on Sepolia (Simulated Demo Mode)...`,
+      txHash: null,
+      onRetryDemo: null,
+    });
+
+    try {
+      await api.updateEscrow(requestId, {
+        state: 'COMPLETED',
+      });
+    } catch (e) {
+      console.warn('Backend sync for simulated settlement:', e.message);
+    }
+
+    await new Promise((res) => setTimeout(res, 1200));
+    setTxModal({
+      isOpen: true,
+      status: 'success',
+      title: 'Transfer Settled & Title Conveyed!',
+      message: `Ownership successfully transferred to buyer! Sale proceeds credited to seller's pull-payment balance in simulated block #6421175.`,
+      txHash: '0x9942aef3104bd36e897103ec19b48f1025a74e0c3f3010641599893b5f6cb123',
+      onRetryDemo: null,
+    });
+    setEscrows((prev) =>
+      prev.map((e) => (e.request_id === requestId ? { ...e, state: 'COMPLETED' } : e))
+    );
+  };
+
+  const handleSettleEscrowOnChain = async (requestId) => {
+    if (web3Service.isPersonaMode(user)) {
+      await executeSimulatedSettlement(requestId);
+      return;
+    }
+
+    try {
+      await web3Service.ensureSepoliaNetwork();
+      setTxModal({
+        isOpen: true,
+        status: 'pending',
+        title: 'Settling Land Ownership Transfer',
+        message: `Calling settleTransfer for Request #${requestId} on Sepolia...`,
+        txHash: null,
+        onRetryDemo: null,
+      });
+
+      const escrowContract = web3Service.getTransferEscrow();
+      const tx = await escrowContract.settleTransfer(requestId);
+      setTxModal((prev) => ({ ...prev, txHash: tx.hash, message: 'Awaiting block confirmation on Sepolia...' }));
+      const receipt = await tx.wait(1);
+
+      try {
+        await api.updateEscrow(requestId, {
+          state: 'COMPLETED',
+        });
+      } catch (e) {
+        console.warn('Backend settlement sync:', e);
+      }
+
+      setTxModal({
+        isOpen: true,
+        status: 'success',
+        title: 'Transfer Settled & Title Conveyed!',
+        message: `Ownership transferred to buyer in block #${receipt.blockNumber}! Sale proceeds credited to seller pull-payment lockbox.`,
+        txHash: receipt.hash,
+        onRetryDemo: null,
+      });
+
+      loadInspectorQueue();
+    } catch (err) {
+      console.error('Escrow settlement failed:', err);
+      const parsed = web3Service.parseContractError(err, 'Escrow Settlement');
+      setTxModal({
+        isOpen: true,
+        status: 'error',
+        title: parsed.title,
+        errorMessage: parsed.message,
+        onRetryDemo: () => executeSimulatedSettlement(requestId),
       });
     }
   };
@@ -406,20 +551,34 @@ export default function InspectorPortal({ user, onConnectWallet }) {
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '0.75rem' }}>
-                    <button
-                      className="btn-secondary"
-                      onClick={() => handleRejectEscrowOnChain(escrow.request_id)}
-                      style={{ color: 'var(--brand-danger)' }}
-                    >
-                      Reject & Refund
-                    </button>
-                    <button
-                      className="btn-primary"
-                      onClick={() => handleApproveEscrowOnChain(escrow.request_id)}
-                    >
-                      Authorize Transfer
-                    </button>
+                  <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                    {escrow.state !== 'COMPLETED' && (
+                      <button
+                        className="btn-secondary"
+                        onClick={() => handleRejectEscrowOnChain(escrow.request_id)}
+                        style={{ color: 'var(--brand-danger)', borderColor: 'var(--brand-danger)' }}
+                      >
+                        Reject & Refund
+                      </button>
+                    )}
+                    {escrow.state === 'APPROVED' ? (
+                      <button
+                        className="btn-primary"
+                        onClick={() => handleSettleEscrowOnChain(escrow.request_id)}
+                        style={{ background: 'linear-gradient(135deg, #10b981, #06b6d4)' }}
+                      >
+                        Settle & Convey Title
+                      </button>
+                    ) : escrow.state !== 'COMPLETED' ? (
+                      <button
+                        className="btn-primary"
+                        onClick={() => handleApproveEscrowOnChain(escrow.request_id)}
+                      >
+                        Authorize Transfer
+                      </button>
+                    ) : (
+                      <span className="badge badge-verified">Settled & Conveyed</span>
+                    )}
                   </div>
                 </div>
               ))}
@@ -508,6 +667,7 @@ export default function InspectorPortal({ user, onConnectWallet }) {
         message={txModal.message}
         txHash={txModal.txHash}
         errorMessage={txModal.errorMessage}
+        onRetryDemo={txModal.onRetryDemo}
       />
     </div>
   );
